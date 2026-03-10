@@ -16,7 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
-
+Route::redirect('/home', '/login');
 Route::middleware('auth')->group(function () {
     Route::get('sppd/rekap', [ReportController::class, 'index'])->name('sppd.rekap');
     Route::resource('sppd', SppdRequestController::class);
