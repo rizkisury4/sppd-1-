@@ -78,7 +78,29 @@ class SppdRequestController extends Controller
     {
         $this->authorize('view', $sppd);
         $sppd->load(['expenses', 'attachments', 'approvals']);
-        return view('sppd.show', compact('sppd'));
+        $officers = \App\Models\User::whereIn('role', ['admin','manager'])->orderBy('name')->get(['id','name','email','role']);
+        return view('sppd.show', compact('sppd', 'officers'));
+    }
+
+    public function pdf(SppdRequest $sppd)
+    {
+        $this->authorize('view', $sppd);
+        $sppd->load(['expenses', 'attachments', 'approvals', 'pegawai', 'pejabatPerintah']);
+        $html = view('sppd.pdf', compact('sppd'))->render();
+        $mpdf = new \Mpdf\Mpdf([
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'margin_left' => 15,
+            'margin_right' => 15,
+        ]);
+        $mpdf->SetTitle('Laporan SPPD '.$sppd->kode);
+        $mpdf->WriteHTML($html);
+        $content = $mpdf->Output('', 'S');
+        $filename = 'Laporan-SPPD-'.$sppd->kode.'.pdf';
+        return response($content, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     public function edit(SppdRequest $sppd): View

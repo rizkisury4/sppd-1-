@@ -17,6 +17,9 @@ class UpdateSppdRequest extends FormRequest
             'tujuan' => ['sometimes','required','string','max:255'],
             'kota' => ['nullable','string','max:255'],
             'negara' => ['nullable','string','max:255'],
+            'jenis_perjalanan' => ['sometimes','required','string','in:diklat,non_diklat'],
+            'sumber_anggaran' => ['nullable','string'],
+            'pejabat_perintah_id' => ['nullable','integer','exists:users,id'],
             'tanggal_berangkat' => ['sometimes','required','date'],
             'tanggal_pulang' => ['sometimes','required','date','after_or_equal:tanggal_berangkat'],
             'lama_hari' => ['sometimes','required','integer','min:1'],
@@ -27,4 +30,3 @@ class UpdateSppdRequest extends FormRequest
         ];
     }
 }
-

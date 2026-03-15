@@ -69,6 +69,10 @@
                                             <td class="px-3 py-2">{{ $r->status }}</td>
                                             <td class="px-3 py-2">
                                                 <a class="text-blue-600 dark:text-blue-400 hover:underline font-medium" href="{{ route('sppd.show', $r) }}">Detail</a>
+                                                @if(in_array(auth()->user()->role, ['admin','manager']))
+                                                    <span class="mx-1">|</span>
+                                                    <a class="text-emerald-700 dark:text-emerald-400 hover:underline font-medium" href="{{ route('sppd.pdf', $r) }}">PDF</a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

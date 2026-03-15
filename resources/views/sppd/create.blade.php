@@ -45,10 +45,17 @@
 
                 <!-- Step 1 -->
                 <div x-show="step===1" x-cloak>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-4">
                         <div class="sm:col-span-2">
                             <label class="block mb-1">Tujuan</label>
                             <input x-model="form.tujuan" name="tujuan" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" required />
+                        </div>
+                        <div>
+                            <label class="block mb-1">Jenis Perjalanan Dinas</label>
+                            <select x-model="form.jenis_perjalanan" name="jenis_perjalanan" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" required>
+                                <option value="non_diklat">Non Diklat</option>
+                                <option value="diklat">Diklat</option>
+                            </select>
                         </div>
                         <div class="relative">
                             <label class="block mb-1">Kota Asal (Indonesia)</label>
@@ -82,10 +89,14 @@
                             </ul>
                             <p class="text-xs text-gray-500 mt-1" x-show="form.dest">Dipilih: <span x-text="form.dest?.name"></span></p>
                         </div>
-                        <div class="sm:col-span-2">
+                        <div>
                             <div class="text-sm text-gray-700 dark:text-gray-300" x-show="form.distance_km !== null">
                                 Perkiraan jarak: <span class="font-semibold" x-text="(form.distance_km ?? 0).toFixed(1)"></span> km
                             </div>
+                        </div>
+                        <div>
+                            <label class="block mb-1">Sumber Anggaran</label>
+                            <textarea x-model="form.sumber_anggaran" name="sumber_anggaran" rows="4" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" placeholder="Contoh: DIPA 2026 Kegiatan X ..."></textarea>
                         </div>
                         <input type="hidden" name="kota" x-model="form.kota" />
                         <input type="hidden" name="negara" x-model="form.negara" />
@@ -94,7 +105,7 @@
 
                 <!-- Step 2 -->
                 <div x-show="step===2" x-cloak>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-4">
                         <div>
                             <label class="block mb-1">Tanggal Berangkat</label>
                             <input x-model="form.tanggal_berangkat" type="date" name="tanggal_berangkat" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" required />
@@ -133,7 +144,9 @@
                             <div><span class="font-semibold">Pulang:</span> <span x-text="form.tanggal_pulang || '-'"></span></div>
                             <div><span class="font-semibold">Lama:</span> <span x-text="form.lama_hari || '-'"></span> hari</div>
                         </div>
+                        <div class="p-4"><span class="font-semibold">Jenis Perjalanan:</span> <span x-text="form.jenis_perjalanan === 'diklat' ? 'Diklat' : 'Non Diklat'"></span></div>
                         <div class="p-4"><span class="font-semibold">Maksud:</span> <span x-text="form.maksud_perjalanan || '-'"></span></div>
+                        <div class="p-4"><span class="font-semibold">Sumber Anggaran:</span> <span x-text="form.sumber_anggaran || '-'"></span></div>
                     </div>
                 </div>
 
@@ -165,10 +178,12 @@
                     tujuan: '',
                     kota: '',
                     negara: 'Indonesia',
+                    jenis_perjalanan: 'non_diklat',
                     tanggal_berangkat: '',
                     tanggal_pulang: '',
                     lama_hari: 1,
                     maksud_perjalanan: '',
+                    sumber_anggaran: '',
                     origin_query: '',
                     dest_query: '',
                     origin: null,

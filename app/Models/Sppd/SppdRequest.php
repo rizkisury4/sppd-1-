@@ -17,6 +17,9 @@ class SppdRequest extends Model
         'tujuan',
         'kota',
         'negara',
+        'jenis_perjalanan',
+        'sumber_anggaran',
+        'pejabat_perintah_id',
         'tanggal_berangkat',
         'tanggal_pulang',
         'lama_hari',
@@ -44,6 +47,11 @@ class SppdRequest extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'disetujui_oleh');
+    }
+
+    public function pejabatPerintah()
+    {
+        return $this->belongsTo(User::class, 'pejabat_perintah_id');
     }
 
     public function department()

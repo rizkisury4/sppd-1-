@@ -18,6 +18,9 @@ class StoreSppdRequest extends FormRequest
             'tujuan' => ['required','string','max:255'],
             'kota' => ['nullable','string','max:255'],
             'negara' => ['nullable','string','max:255'],
+            'jenis_perjalanan' => ['required','string','in:diklat,non_diklat'],
+            'sumber_anggaran' => ['nullable','string'],
+            'pejabat_perintah_id' => ['nullable','integer','exists:users,id'],
             'tanggal_berangkat' => ['required','date'],
             'tanggal_pulang' => ['required','date','after_or_equal:tanggal_berangkat'],
             'lama_hari' => ['required','integer','min:1'],
@@ -26,4 +29,3 @@ class StoreSppdRequest extends FormRequest
         ];
     }
 }
-

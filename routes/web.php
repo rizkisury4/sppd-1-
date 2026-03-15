@@ -24,7 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::post('sppd/{sppd}/setujui', [SppdRequestController::class, 'setujui'])->name('sppd.setujui');
     Route::post('sppd/{sppd}/tolak', [SppdRequestController::class, 'tolak'])->name('sppd.tolak');
     Route::post('sppd/{sppd}/ajukan-ulang', [SppdRequestController::class, 'ajukanUlang'])->name('sppd.ajukanUlang');
-
+     Route::get('sppd/{sppd}/pdf', [SppdRequestController::class, 'pdf'])->name('sppd.pdf');
     Route::get('/geo/cities', [GeoController::class, 'searchCity'])->name('geo.cities');
 
     Route::post('sppd/{sppd}/expenses', [ExpenseController::class, 'store'])->name('sppd.expenses.store');

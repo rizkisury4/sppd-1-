@@ -14,7 +14,7 @@ class StoreExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kategori' => ['required','string','in:transport,akomodasi,harian,lainnya'],
+            'kategori' => ['required','string','in:transport,akomodasi,harian,lainnya,uang_makan,cuci_pakaian'],
             'deskripsi' => ['nullable','string','max:255'],
             'jumlah' => ['required','numeric','min:0'],
             'mata_uang' => ['nullable','string','max:10'],
@@ -22,4 +22,3 @@ class StoreExpenseRequest extends FormRequest
         ];
     }
 }
-
