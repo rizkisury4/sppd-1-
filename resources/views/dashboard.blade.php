@@ -75,7 +75,42 @@
                 </div>
             </div>
         </div>
-        
+        <div>
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-xl ring-1 ring-gray-100 dark:ring-gray-700">
+                <div class="p-6 text-gray-900 dark:text-gray-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold">Total Pencairan</h3>
+                        <div class="text-sm font-semibold">{{ number_format($disbursementTotal, 2) }}</div>
+                    </div>
+                    <canvas id="disbursementDonut" height="180"></canvas>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                        @if(isset($disbursement) && $disbursement->count())
+                            @foreach($disbursement as $row)
+                                <div class="text-xs flex items-center justify-between">
+                                    <span>{{ ucfirst($row->kategori) }}</span>
+                                    <span>{{ number_format($row->total, 2) }}</span>
+                                </div>
+                            @endforeach
+                        @else
+                            <p class="text-sm text-gray-600 dark:text-gray-400 col-span-2">Belum ada data pencairan.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            window.addEventListener('DOMContentLoaded', function () {
+                const el = document.getElementById('disbursementDonut');
+                if (!el) return;
+                const labels = {!! isset($disbursement) ? $disbursement->pluck('kategori')->map(fn($v)=>ucfirst($v))->toJson() : '[]' !!};
+                const data = {!! isset($disbursement) ? $disbursement->pluck('total')->toJson() : '[]' !!};
+                if (!labels.length) return;
+                const colors = ['#6366F1','#22C55E','#F59E0B','#EF4444','#06B6D4','#84CC16','#A855F7','#F97316'];
+                new Chart(el, { type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: labels.map((_, i) => colors[i % colors.length]), borderWidth: 0 }] }, options: { responsive: true, cutout: '60%', plugins: { legend: { display: false } } } });
+            });
+        </script>
+    @endpush
 </x-dashboard-layout>

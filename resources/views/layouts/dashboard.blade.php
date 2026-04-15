@@ -10,34 +10,45 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-       <div x-data="{ 
-        openSidebar: window.innerWidth >= 768, 
-        collapsed: false,
-        init(){ 
-            const v = localStorage.getItem('sidebarCollapsed'); 
-            this.collapsed = v === '1' 
-        },
-        toggleCollapse(){ 
-            this.collapsed = !this.collapsed; 
-            localStorage.setItem('sidebarCollapsed', this.collapsed ? '1' : '0') 
-        }
-     }"
-     x-on:toggle-sidebar.window="openSidebar = !openSidebar"
-     class="min-h-screen bg-gray-100 dark:bg-gray-900">
+     <div 
+x-data="{ 
+    openSidebar: window.innerWidth >= 768, 
+    collapsed: false,
+
+    init(){ 
+        const v = localStorage.getItem('sidebarCollapsed'); 
+        this.collapsed = v === '1' 
+    },
+
+    toggleCollapse(){ 
+        this.collapsed = !this.collapsed; 
+        localStorage.setItem('sidebarCollapsed', this.collapsed ? '1' : '0') 
+    }
+}" 
+@toggle-sidebar.window="openSidebar = !openSidebar"
+class="min-h-screen bg-gray-100 dark:bg-gray-900">
             @include('layouts.navigation')
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative"
-                 :class="openSidebar ? (collapsed ? 'md:pl-16' : 'md:pl-64') : ''">
+               :class="collapsed ? 'md:pl-20' : 'md:pl-64'">
+                 <div x-data="{ open: false }">
+    
+</div>
                 <div class="flex gap-6">
                     <div x-show="openSidebar" x-transition.opacity class="fixed inset-0 bg-black/40 z-40 md:hidden"
                          x-on:click="openSidebar=false"></div>
-                    <aside class="fixed inset-y-0 left-0 pt-16 bg-gradient-to-b from-indigo-700 to-indigo-800 text-indigo-100 z-50 transform transition-transform duration-200 w-64 md:w-64"
-                           :class="[openSidebar ? 'translate-x-0' : '-translate-x-full', collapsed ? 'md:w-16' : 'md:w-64']"
-                           aria-label="Left Sidebar">
+         <aside 
+class="fixed inset-y-0 left-0 pt-16 bg-gradient-to-b from-indigo-700 to-indigo-800 text-indigo-100 z-50 transform transition-all duration-200"
+:class="[
+    openSidebar ? 'translate-x-0' : '-translate-x-full',
+    collapsed ? 'w-20' : 'w-64'
+]"
+>
+                        
                         <div class="h-full flex flex-col">
                             <div class="px-4 py-3 border-b border-indigo-600 flex items-center justify-between">
                                 <div class="text-sm font-semibold" x-show="!collapsed">Menu</div>
                                 <button class="p-2 rounded hidden md:inline-flex transition-colors hover:bg-indigo-600/70 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                                        x-on:click="toggleCollapse()" aria-label="Collapse sidebar">
+                                         x-on:click="toggleCollapse()" aria-label="Collapse sidebar">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="collapsed ? 'rotate-180' : ''">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                                     </svg>
@@ -49,6 +60,13 @@
                                     <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5l9-7 9 7V20a2 2 0 01-2 2h-4a2 2 0 01-2-2v-5H9v5a2 2 0 01-2 2H3z"/></svg>
                                     <span class="text-base transition-colors group-hover:text-white" x-show="!collapsed">Home</span>
                                 </a>
+                                @if(auth()->user()?->role==='admin')
+                                <a href="{{ route('admin.metrics') }}"
+                                   class="group flex items-center gap-3 px-3 py-2 rounded border-l-4 transition-colors {{ request()->routeIs('admin.metrics') ? 'bg-indigo-800 border-indigo-400' : 'border-transparent hover:bg-indigo-600/70' }}">
+                                    <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                                    <span class="text-base transition-colors group-hover:text-white" x-show="!collapsed">Master Data</span>
+                                </a>
+                                @endif
                                 <a href="{{ route('sppd.create') }}"
                                    class="group flex items-center gap-3 px-3 py-2 rounded border-l-4 transition-colors {{ request()->routeIs('sppd.create') ? 'bg-indigo-800 border-indigo-400' : 'border-transparent hover:bg-indigo-600/70' }}">
                                     <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 3h8l4 4v12a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 11v6M9 14h6"/></svg>
@@ -79,10 +97,7 @@
                     <main class="flex-1">
                         <header class="bg-white dark:bg-gray-800 shadow">
                             <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex items-center gap-3">
-                                <button 
-@click="window.dispatchEvent(new CustomEvent('toggle-sidebar'))"
-class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
->
+                                <button x-on:click="$dispatch('toggle-sidebar')" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none" aria-label="Toggle sidebar">
                                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                     </svg>

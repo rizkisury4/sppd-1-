@@ -325,6 +325,15 @@ CREATE TABLE `sppd_requests` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+ALTER TABLE `sppd_requests` ADD `jenis_perjalanan` varchar(255) NOT NULL DEFAULT 'non_diklat' AFTER `negara`;
+ALTER TABLE `sppd_requests` ADD `jenis_surat` varchar(255) NOT NULL DEFAULT 'surat_tugas' AFTER `jenis_perjalanan`;
+ALTER TABLE `sppd_requests` ADD `sumber_anggaran` longtext AFTER `jenis_surat`;
+ALTER TABLE `sppd_requests` ADD `transportasi` longtext AFTER `sumber_anggaran`;
+ALTER TABLE `sppd_requests` ADD `pejabat_perintah_id` bigint(20) unsigned DEFAULT NULL AFTER `transportasi`;
+ALTER TABLE `sppd_requests` ADD KEY `jenis_perjalanan` (`jenis_perjalanan`);
+ALTER TABLE `sppd_requests` ADD KEY `sppd_requests_pejabat_perintah_id_foreign` (`pejabat_perintah_id`);
+ALTER TABLE `sppd_requests` ADD CONSTRAINT `sppd_requests_pejabat_perintah_id_foreign` FOREIGN KEY (`pejabat_perintah_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
 --
 -- Dumping data for table `sppd_requests`
 --

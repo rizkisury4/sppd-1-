@@ -24,7 +24,7 @@ class SppdRequestController extends Controller
         if ($user->role === 'pegawai') {
             $q->where('pegawai_id', $user->id);
         }
-        if (in_array($user->role, ['manager','admin']) && $request->filled('pegawai_id')) {
+        if (in_array($user->role, ['manager','admin','finance']) && $request->filled('pegawai_id')) {
             $q->where('pegawai_id', $request->integer('pegawai_id'));
         }
         if ($request->filled('status')) {
@@ -140,20 +140,42 @@ class SppdRequestController extends Controller
     public function setujui(SppdRequest $sppd): RedirectResponse
     {
         $this->authorize('approve', $sppd);
-        $sppd->update([
-            'status' => 'disetujui',
-            'disetujui_oleh' => Auth::id(),
-            'disetujui_pada' => now(),
-            'alasan_penolakan' => null,
-        ]);
-        SppdApproval::create([
-            'sppd_id' => $sppd->id,
-            'approver_id' => Auth::id(),
-            'status' => 'disetujui',
-            'catatan' => 'Disetujui',
-            'acted_at' => now(),
-        ]);
-        event(new SppdApproved($sppd));
+        $role = Auth::user()->role;
+        if ($role === 'admin') {
+            // Admin approve pertama
+            SppdApproval::create([
+                'sppd_id' => $sppd->id,
+                'approver_id' => Auth::id(),
+                'status' => 'disetujui',
+                'catatan' => 'Disetujui Admin',
+                'acted_at' => now(),
+            ]);
+            // Status tetap 'diajukan' sampai manager approve
+        } elseif ($role === 'manager') {
+            // Cek apakah sudah ada approval dari admin
+            $adminApproval = $sppd->approvals()->whereHas('approver', function($q) {
+                $q->where('role', 'admin');
+            })->where('status', 'disetujui')->exists();
+            
+            if ($adminApproval) {
+                $sppd->update([
+                    'status' => 'disetujui',
+                    'disetujui_oleh' => Auth::id(),
+                    'disetujui_pada' => now(),
+                    'alasan_penolakan' => null,
+                ]);
+                SppdApproval::create([
+                    'sppd_id' => $sppd->id,
+                    'approver_id' => Auth::id(),
+                    'status' => 'disetujui',
+                    'catatan' => 'Disetujui Manager',
+                    'acted_at' => now(),
+                ]);
+                event(new SppdApproved($sppd));
+            } else {
+                return redirect()->back()->withErrors(['error' => 'SPPD harus disetujui admin terlebih dahulu.']);
+            }
+        }
         return redirect()->route('sppd.show', $sppd);
     }
 

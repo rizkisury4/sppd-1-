@@ -10,6 +10,7 @@
                         $statusStyles = [
                             'draft' => 'bg-slate-100 text-slate-800',
                             'diajukan' => 'bg-amber-100 text-amber-800',
+                            'disetujui_admin' => 'bg-blue-100 text-blue-800',
                             'disetujui' => 'bg-emerald-100 text-emerald-800',
                             'ditolak' => 'bg-rose-100 text-rose-800',
                             'selesai' => 'bg-indigo-100 text-indigo-800',
@@ -47,6 +48,7 @@
                                 <div><span class="text-slate-500">Kota:</span> <span class="font-medium">{{ $sppd->kota ?? '-' }}</span></div>
                                 <div><span class="text-slate-500">Negara:</span> <span class="font-medium">{{ $sppd->negara ?? '-' }}</span></div>
                                 <div><span class="text-slate-500">Jenis Perjalanan:</span> <span class="font-medium">{{ $sppd->jenis_perjalanan === 'diklat' ? 'Diklat' : 'Non Diklat' }}</span></div>
+                                <div><span class="text-slate-500">Jenis:</span> <span class="font-medium">{{ $sppd->jenis_surat === 'undangan' ? 'Undangan' : 'Surat Tugas' }}</span></div>
                                 <div><span class="text-slate-500">Pejabat Berwenang:</span> <span class="font-medium">{{ $sppd->pejabatPerintah?->name ?? '-' }}</span></div>
                                 @if(!empty($sppd->sumber_anggaran))
                                     <div class="sm:col-span-2"><span class="text-slate-500">Sumber Anggaran:</span> <span class="font-medium">{{ $sppd->sumber_anggaran }}</span></div>
@@ -75,6 +77,13 @@
                                             <select name="jenis_perjalanan" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">
                                                 <option value="non_diklat" @selected($sppd->jenis_perjalanan==='non_diklat')>Non Diklat</option>
                                                 <option value="diklat" @selected($sppd->jenis_perjalanan==='diklat')>Diklat</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-sm">Jenis</label>
+                                            <select name="jenis_surat" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">
+                                                <option value="surat_tugas" @selected($sppd->jenis_surat==='surat_tugas')>Surat Tugas</option>
+                                                <option value="undangan" @selected($sppd->jenis_surat==='undangan')>Undangan</option>
                                             </select>
                                         </div>
                                         <div class="sm:col-span-2">
@@ -122,14 +131,20 @@
                         </div>
                         <div>
                             <h4 class="text-sm font-semibold mb-2">Rincian</h4>
-                            <p class="text-sm">{{ $sppd->maksud_perjalanan }}</p>
+                            <div class="text-sm space-y-1">
+                                <p>{{ $sppd->maksud_perjalanan }}</p>
+                                @if(!empty($sppd->transportasi))
+                                    <p><span class="font-semibold">Transportasi:</span> {{ $sppd->transportasi }}</p>
+                                @endif
+                            </div>
                             @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
                                 <details class="mt-3">
                                     <summary class="cursor-pointer text-sm text-blue-600">Edit Rincian</summary>
-                                    <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="mt-2">
+                                    <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="mt-2 space-y-2">
                                         @csrf
                                         @method('PATCH')
                                         <textarea name="maksud_perjalanan" rows="4" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">{{ $sppd->maksud_perjalanan }}</textarea>
+                                        <textarea name="transportasi" rows="3" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" placeholder="Transportasi yang digunakan">{{ $sppd->transportasi }}</textarea>
                                         <div class="mt-2">
                                             <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Simpan Perubahan</button>
                                         </div>
@@ -139,6 +154,13 @@
                         </div>
                     </div>
                 </div>
+
+                @if(auth()->user()->id === $sppd->pegawai_id && $sppd->status === 'ditolak' && !empty($sppd->alasan_penolakan))
+                    <div class="rounded-lg border border-rose-200 bg-rose-50 dark:border-rose-700/60 dark:bg-rose-900/20 p-4">
+                        <h3 class="font-semibold text-rose-700 dark:text-rose-300">Alasan Penolakan</h3>
+                        <p class="mt-2 text-sm text-rose-700/90 dark:text-rose-200">{{ $sppd->alasan_penolakan }}</p>
+                    </div>
+                @endif
 
                 
 
@@ -233,12 +255,7 @@
                         <p>Belum ada biaya.</p>
                     @endif
                 </div>
-                @if(in_array(auth()->user()->role, ['admin','manager']))
-                    <div>
-                        <a href="{{ route('sppd.pdf', $sppd) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Unduh PDF</a>
-                    </div>
-                @endif
-                @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                 @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Pejabat Berwenang Memberi Perintah</h3>
                         <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="max-w-lg">
@@ -258,10 +275,28 @@
                     </div>
                 @endif
 
-                @if(in_array(auth()->user()->role, ['admin','manager']) && $sppd->status === 'diajukan')
+                @if(auth()->user()->role === 'admin' && $sppd->status === 'diajukan' && !$sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'admin'))->exists())
                     <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 ring-1 ring-gray-100 dark:ring-gray-700">
-                            <h3 class="font-semibold mb-3">Keputusan</h3>
+                            <h3 class="font-semibold mb-3">Keputusan Admin</h3>
+                            <div class="flex flex-wrap gap-3">
+                                <form method="POST" action="{{ route('sppd.setujui', $sppd) }}">
+                                    @csrf
+                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Setujui</button>
+                                </form>
+                                <form method="POST" action="{{ route('sppd.tolak', $sppd) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    <input type="text" name="alasan_penolakan" class="rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Alasan penolakan" required />
+                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-rose-600 text-white hover:bg-rose-700 ring-rose-700/20 dark:bg-rose-500 dark:hover:bg-rose-400 dark:ring-white/10">Tolak</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                @if(auth()->user()->role === 'manager' && $sppd->status === 'diajukan' && $sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'admin'))->exists() && !$sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'manager'))->exists())
+                    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 ring-1 ring-gray-100 dark:ring-gray-700">
+                            <h3 class="font-semibold mb-3">Keputusan Manager</h3>
                             <div class="flex flex-wrap gap-3">
                                 <form method="POST" action="{{ route('sppd.setujui', $sppd) }}">
                                     @csrf
@@ -332,11 +367,23 @@
                             @csrf
                             <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-blue-600 text-white hover:bg-blue-700 ring-blue-700/20 dark:bg-blue-500 dark:hover:bg-blue-400 dark:ring-white/10">Ajukan</button>
                         </form>
+                         {{-- tombol PDF DI SINI --}}
+    <a href="{{ route('sppd.pdf', $sppd) }}" 
+       class="px-4 py-2 bg-blue-600 text-white rounded">
+        Unduh PDF
+    </a>
                         @if($sppd->status === 'ditolak')
                             <form method="POST" action="{{ route('sppd.ajukanUlang', $sppd) }}">
                                 @csrf
                                 <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-indigo-600 text-white hover:bg-indigo-700 ring-indigo-700/20 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:ring-white/10">Ajukan Ulang</button>
+                           <div class="mt-6 flex justify-end">
+    <a href="{{ route('sppd.pdf', $sppd) }}" 
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        Unduh PDF
+    </a>
+</div>
                             </form>
+                            
                         @endif
                     </div>
                 @endif

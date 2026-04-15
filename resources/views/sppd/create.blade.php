@@ -57,6 +57,13 @@
                                 <option value="diklat">Diklat</option>
                             </select>
                         </div>
+                        <div>
+                            <label class="block mb-1">Jenis</label>
+                            <select x-model="form.jenis_surat" name="jenis_surat" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">
+                                <option value="surat_tugas">Surat Tugas</option>
+                                <option value="undangan">Undangan</option>
+                            </select>
+                        </div>
                         <div class="relative">
                             <label class="block mb-1">Kota Asal (Indonesia)</label>
                             <input x-model="form.origin_query"
@@ -124,9 +131,13 @@
 
                 <!-- Step 3 -->
                 <div x-show="step===3" x-cloak>
-                    <div>
+                    <div class="space-y-4">
                         <label class="block mb-1">Maksud Perjalanan</label>
                         <textarea x-model="form.maksud_perjalanan" name="maksud_perjalanan" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" rows="5" required></textarea>
+                        <div>
+                            <label class="block mb-1">Transportasi yang Digunakan</label>
+                            <textarea x-model="form.transportasi" name="transportasi" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" rows="4" placeholder="Contoh: Pesawat Garuda, Taksi bandara, Kereta api..."></textarea>
+                        </div>
                     </div>
                 </div>
 
@@ -145,8 +156,10 @@
                             <div><span class="font-semibold">Lama:</span> <span x-text="form.lama_hari || '-'"></span> hari</div>
                         </div>
                         <div class="p-4"><span class="font-semibold">Jenis Perjalanan:</span> <span x-text="form.jenis_perjalanan === 'diklat' ? 'Diklat' : 'Non Diklat'"></span></div>
+                        <div class="p-4"><span class="font-semibold">Jenis:</span> <span x-text="form.jenis_surat === 'undangan' ? 'Undangan' : 'Surat Tugas'"></span></div>
                         <div class="p-4"><span class="font-semibold">Maksud:</span> <span x-text="form.maksud_perjalanan || '-'"></span></div>
                         <div class="p-4"><span class="font-semibold">Sumber Anggaran:</span> <span x-text="form.sumber_anggaran || '-'"></span></div>
+                        <div class="p-4"><span class="font-semibold">Transportasi:</span> <span x-text="form.transportasi || '-'"></span></div>
                     </div>
                 </div>
 
@@ -179,11 +192,13 @@
                     kota: '',
                     negara: 'Indonesia',
                     jenis_perjalanan: 'non_diklat',
+                    jenis_surat: 'surat_tugas',
                     tanggal_berangkat: '',
                     tanggal_pulang: '',
                     lama_hari: 1,
                     maksud_perjalanan: '',
                     sumber_anggaran: '',
+                    transportasi: '',
                     origin_query: '',
                     dest_query: '',
                     origin: null,

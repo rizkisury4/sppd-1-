@@ -44,6 +44,10 @@
                 <td class="label">Jenis Perjalanan</td>
                 <td>{{ $sppd->jenis_perjalanan === 'diklat' ? 'Diklat' : 'Non Diklat' }}</td>
             </tr>
+            <tr>
+                <td class="label">Jenis</td>
+                <td>{{ $sppd->jenis_surat === 'undangan' ? 'Undangan' : 'Surat Tugas' }}</td>
+            </tr>
             @if(!empty($sppd->sumber_anggaran))
             <tr>
                 <td class="label">Sumber Anggaran</td>

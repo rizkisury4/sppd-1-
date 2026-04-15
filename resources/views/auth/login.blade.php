@@ -1,91 +1,33 @@
 <x-guest-layout>
-
-<div class="min-h-screen flex items-center justify-center
-            bg-gradient-to-br from-blue-700 via-blue-600 to-blue-900">
-
-    <!-- LOGIN CARD -->
-    <div class="backdrop-blur-lg bg-white/20
-                border border-white/30
-                shadow-2xl rounded-2xl
-                w-full max-w-md p-8 text-white">
-
-        <!-- LOGO -->
-        <div class="flex justify-center mb-5">
-            <img src="{{ asset('images/pln.png') }}"
-                 class="h-16 object-contain">
+    <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-1">Masuk</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Gunakan akun PLN Anda untuk melanjutkan.</p>
+    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <form method="POST" action="{{ route('login') }}" class="space-y-4">
+        @csrf
+        <div>
+            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Email</label>
+            <input id="email" class="mt-1 w-full rounded-md border-gray-300 bg-white dark:bg-slate-800 dark:text-slate-100" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+            <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
-
-        <!-- TITLE -->
-        <h2 class="text-center text-2xl font-bold mb-6">
-            Sistem SPPD PLN
-        </h2>
-
-        <x-auth-session-status class="mb-4 text-center"
-            :status="session('status')" />
-
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-
-            <!-- EMAIL -->
-            <div>
-                <label class="text-sm">Email</label>
-                <input type="email"
-                    name="email"
-                    required
-                    class="w-full mt-1 p-2 rounded-lg
-                           bg-white/30 border border-white/40
-                           placeholder-white text-white
-                           focus:ring-2 focus:ring-yellow-300">
-            </div>
-
-            <!-- PASSWORD -->
-            <div class="mt-4">
-                <label class="text-sm">Password</label>
-                <input type="password"
-                    name="password"
-                    required
-                    class="w-full mt-1 p-2 rounded-lg
-                           bg-white/30 border border-white/40
-                           text-white
-                           focus:ring-2 focus:ring-yellow-300">
-            </div>
-
-            <!-- REMEMBER -->
-            <div class="flex items-center mt-4 text-sm">
-                <input type="checkbox" name="remember"
-                       class="mr-2">
-                Remember me
-            </div>
-<div class="flex justify-between items-center mt-4 text-sm">
-    
-   
-    @if (Route::has('password.request'))
-        <a href="{{ route('password.request') }}"
-           class="text-yellow-300 hover:text-yellow-400 underline">
-            Forgot Password?
-        </a>
-    @endif
-
-</div>
-            <!-- BUTTON -->
-            <button
-                class="w-full mt-6 bg-yellow-400
-                       hover:bg-yellow-500
-                       text-blue-900 font-bold
-                       py-2 rounded-lg
-                       transition">
-                Login
-            </button>
-
-        </form>
-
-        <!-- FOOTER -->
-        <div class="text-center text-xs mt-6 opacity-80">
-            © {{ date('Y') }} PT PLN (Persero)
+        <div>
+            <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
+            <input id="password" class="mt-1 w-full rounded-md border-gray-300 bg-white dark:bg-slate-800 dark:text-slate-100" type="password" name="password" required autocomplete="current-password" />
+            <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
-
-    </div>
-
-</div>
-
+        <div class="flex items-center justify-between">
+            <label for="remember_me" class="inline-flex items-center">
+                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-sky-600 focus:ring-sky-500 dark:bg-gray-900 dark:border-gray-700" name="remember">
+                <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">Ingat saya</span>
+            </label>
+            @if (Route::has('password.request'))
+                <a class="text-sm text-sky-700 dark:text-sky-400 hover:underline" href="{{ route('password.request') }}">
+                    Lupa password?
+                </a>
+            @endif
+        </div>
+        <button class="inline-flex items-center justify-center w-full px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-sky-600 text-white hover:bg-sky-700 ring-sky-700/20 dark:bg-sky-500 dark:hover:bg-sky-400 dark:ring-white/10">
+            Masuk
+        </button>
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-center">Belum punya akun? <a href="{{ route('register') }}" class="text-sky-700 dark:text-sky-400 hover:underline">Daftar</a></p>
+    </form>
 </x-guest-layout>
