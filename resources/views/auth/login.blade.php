@@ -1,6 +1,6 @@
 <x-guest-layout>
     <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-1">Masuk</h1>
-    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Gunakan akun PLN Anda untuk melanjutkan.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Gunakan akun SPPD PLN EMI Anda untuk melanjutkan.</p>
     <x-auth-session-status class="mb-4" :status="session('status')" />
     <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf

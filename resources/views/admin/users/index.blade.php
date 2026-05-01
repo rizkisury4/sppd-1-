@@ -14,6 +14,7 @@
                             <tr>
                                 <th class="px-3 py-2">Nama</th>
                                 <th class="px-3 py-2">Role</th>
+                                <th class="px-3 py-2">Karyawan</th>
                                 <th class="px-3 py-2">Email</th>
                                 <th class="px-3 py-2">Awal Bergabung</th>
                                 <th class="px-3 py-2">Aksi</th>
@@ -24,6 +25,7 @@
                                 <tr class="border-b border-gray-100 dark:border-gray-700">
                                     <td class="px-3 py-2">{{ $u->name }}</td>
                                     <td class="px-3 py-2 capitalize">{{ $u->role }}</td>
+                                    <td class="px-3 py-2">{{ $u->employee?->name ? $u->employee->name.' ('.$u->employee->nip.')' : '-' }}</td>
                                     <td class="px-3 py-2">{{ $u->email }}</td>
                                     <td class="px-3 py-2">{{ $u->created_at?->format('Y-m-d') }}</td>
                                     <td class="px-3 py-2">

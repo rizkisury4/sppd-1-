@@ -6,6 +6,7 @@ use App\Http\Controllers\Sppd\SppdRequestController;
 use App\Http\Controllers\Sppd\AttachmentController;
 use App\Http\Controllers\Sppd\ReportController;
 use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
+use App\Http\Controllers\Admin\EmployeeController as AdminEmployeeController;
 use App\Http\Controllers\Admin\TravelCategoryController as AdminTravelCategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\MetricsController as AdminMetricsController;
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('sppd/{sppd}/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('sppd.expenses.destroy');
 
     Route::post('sppd/{sppd}/attachments', [AttachmentController::class, 'store'])->name('sppd.attachments.store');
+    Route::get('sppd/{sppd}/attachments/{attachment}', [AttachmentController::class, 'show'])->name('sppd.attachments.show');
     Route::delete('sppd/{sppd}/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('sppd.attachments.destroy');
 
     
@@ -44,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('metrics', [AdminMetricsController::class, 'index'])->name('metrics');
+        Route::post('employees/import', [AdminEmployeeController::class, 'import'])->name('employees.import');
+        Route::resource('employees', AdminEmployeeController::class)->except(['show']);
         Route::resource('departments', AdminDepartmentController::class);
         Route::resource('travel-categories', AdminTravelCategoryController::class);
         Route::resource('users', AdminUserController::class);

@@ -17,7 +17,7 @@
                                 <select name="pegawai_id" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                                     <option value="">Semua</option>
                                     @foreach($pegawaiOptions as $p)
-                                        <option value="{{ $p->id }}" @selected(($filters['pegawai_id'] ?? '')==$p->id)>{{ $p->name }} ({{ $p->email }})</option>
+                                        <option value="{{ $p['id'] }}" @selected(($filters['pegawai_id'] ?? '')==$p['id'])>{{ $p['label'] }}</option>
                                     @endforeach
                                 </select>
                             </div>

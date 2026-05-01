@@ -138,6 +138,27 @@
                             <label class="block mb-1">Transportasi yang Digunakan</label>
                             <textarea x-model="form.transportasi" name="transportasi" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" rows="4" placeholder="Contoh: Pesawat Garuda, Taksi bandara, Kereta api..."></textarea>
                         </div>
+
+                        {{-- Anggota Perjalanan --}}
+                        <div class="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                            <h3 class="font-semibold mb-3">Anggota Perjalanan</h3>
+                            <template x-for="(nama, i) in anggota" :key="i">
+                                <div class="flex gap-2 mb-2">
+                                    <select :name="'anggota[]'" x-model="anggota[i]"
+                                            class="flex-1 rounded border-gray-300 bg-white dark:bg-slate-700 text-sm">
+                                        <option value="">Pilih anggota</option>
+                                        <template x-for="employee in employeeOptions" :key="employee.id">
+                                            <option :value="employee.value" x-text="employee.value"></option>
+                                        </template>
+                                    </select>
+                                    <button type="button" x-show="anggota.length > 1"
+                                            x-on:click="anggota.splice(i, 1)"
+                                            class="px-2 py-1 text-rose-600 hover:text-rose-800 text-sm">✕</button>
+                                </div>
+                            </template>
+                            <button type="button" x-on:click="anggota.push('')"
+                                    class="mt-1 px-3 py-1 bg-indigo-600 text-white rounded text-sm">+ Tambah Anggota</button>
+                        </div>
                     </div>
                 </div>
 
@@ -160,9 +181,19 @@
                         <div class="p-4"><span class="font-semibold">Maksud:</span> <span x-text="form.maksud_perjalanan || '-'"></span></div>
                         <div class="p-4"><span class="font-semibold">Sumber Anggaran:</span> <span x-text="form.sumber_anggaran || '-'"></span></div>
                         <div class="p-4"><span class="font-semibold">Transportasi:</span> <span x-text="form.transportasi || '-'"></span></div>
+                        <div class="p-4">
+                            <span class="font-semibold">Anggota Perjalanan:</span>
+                            <template x-if="selectedAnggota().length">
+                                <ol class="mt-2 list-decimal list-inside space-y-1">
+                                    <template x-for="(nama, index) in selectedAnggota()" :key="index">
+                                        <li x-text="nama"></li>
+                                    </template>
+                                </ol>
+                            </template>
+                            <span x-show="!selectedAnggota().length" class="ml-1">-</span>
+                        </div>
                     </div>
                 </div>
-
                 <div class="flex items-center justify-between pt-2">
                     <button type="button" x-on:click="prev()" x-show="step>1"
                             class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold ring-1 ring-inset bg-slate-100 text-slate-800 hover:bg-slate-200 ring-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:ring-white/10">
@@ -205,6 +236,8 @@
                     dest: null,
                     distance_km: null,
                 },
+                anggota: {{ Js::from(old('anggota', [''])) }},
+                employeeOptions: {{ Js::from($employeeOptions) }},
                 next() {
                     if (this.step === 1) {
                         if (!this.form.tujuan || !this.form.dest) return;
@@ -234,6 +267,9 @@
                     const w = (this.step - 1) * 25;
                     const clamped = Math.max(0, Math.min(75, w));
                     return clamped + '%';
+                },
+                selectedAnggota() {
+                    return this.anggota.filter((nama) => nama && nama.trim() !== '');
                 },
                 async loadOrigin() {
                     if (!this.form.origin_query || this.form.origin_query.length < 3) { this.originOptions = []; return; }

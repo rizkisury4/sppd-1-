@@ -1,0 +1,126 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+
+title Use Case UML Sistem SPPD PLN EMI
+
+actor Admin
+actor Manager
+actor Finance
+actor Pegawai
+
+rectangle "Sistem SPPD" {
+  usecase "Login ke Sistem" as UC_Login
+  usecase "Lihat Dashboard" as UC_Dashboard
+  usecase "Lihat Daftar SPPD" as UC_List
+  usecase "Filter Data SPPD" as UC_Filter
+  usecase "Lihat Detail SPPD" as UC_Detail
+  usecase "Unduh PDF SPPD" as UC_PDF
+  usecase "Lihat Lampiran" as UC_ViewAttachment
+
+  usecase "Buat SPPD" as UC_Create
+  usecase "Edit Draft / Revisi SPPD" as UC_Edit
+  usecase "Kelola Anggota Perjalanan" as UC_Members
+  usecase "Kelola Biaya Per Pegawai" as UC_Expenses
+  usecase "Unggah Lampiran" as UC_UploadAttachment
+  usecase "Hapus Lampiran" as UC_DeleteAttachment
+  usecase "Pilih Pejabat Pemberi Perintah" as UC_AssignOfficer
+  usecase "Ajukan / Ajukan Ulang SPPD" as UC_Submit
+
+  usecase "Setujui SPPD" as UC_Approve
+  usecase "Tolak SPPD" as UC_Reject
+  usecase "Review Persetujuan Manager" as UC_ManagerReview
+  usecase "Review Persetujuan Finance" as UC_FinanceReview
+
+  usecase "Lihat Rekap Laporan" as UC_Report
+  usecase "Kelola Data Pegawai" as UC_EmployeeMaster
+  usecase "Kelola Departemen" as UC_DepartmentMaster
+  usecase "Kelola Kategori Perjalanan" as UC_TravelCategoryMaster
+  usecase "Kelola User" as UC_UserMaster
+  usecase "Lihat Metrics Master Data" as UC_Metrics
+
+  usecase "Pantau Status Pengajuan" as UC_TrackStatus
+}
+
+Admin --> UC_Login
+Admin --> UC_Dashboard
+Admin --> UC_List
+Admin --> UC_Filter
+Admin --> UC_Detail
+Admin --> UC_PDF
+Admin --> UC_ViewAttachment
+Admin --> UC_Create
+Admin --> UC_Edit
+Admin --> UC_Members
+Admin --> UC_Expenses
+Admin --> UC_UploadAttachment
+Admin --> UC_DeleteAttachment
+Admin --> UC_AssignOfficer
+Admin --> UC_Submit
+Admin --> UC_Report
+Admin --> UC_EmployeeMaster
+Admin --> UC_DepartmentMaster
+Admin --> UC_TravelCategoryMaster
+Admin --> UC_UserMaster
+Admin --> UC_Metrics
+
+Manager --> UC_Login
+Manager --> UC_Dashboard
+Manager --> UC_List
+Manager --> UC_Filter
+Manager --> UC_Detail
+Manager --> UC_PDF
+Manager --> UC_ViewAttachment
+Manager --> UC_ManagerReview
+
+Finance --> UC_Login
+Finance --> UC_List
+Finance --> UC_Filter
+Finance --> UC_Detail
+Finance --> UC_ViewAttachment
+Finance --> UC_FinanceReview
+
+Pegawai --> UC_Login
+Pegawai --> UC_List
+Pegawai --> UC_Detail
+Pegawai --> UC_TrackStatus
+
+UC_Edit .> UC_Members : <<include>>
+UC_Edit .> UC_Expenses : <<include>>
+UC_Edit .> UC_AssignOfficer : <<include>>
+UC_Edit .> UC_UploadAttachment : <<include>>
+
+UC_Submit .> UC_Edit : <<extend>>
+UC_ManagerReview .> UC_Approve : <<include>>
+UC_ManagerReview .> UC_Reject : <<include>>
+UC_FinanceReview .> UC_Approve : <<include>>
+UC_FinanceReview .> UC_Reject : <<include>>
+
+note right of UC_ManagerReview
+  Manager memproses SPPD
+  dengan status "diajukan".
+  Hasilnya menjadi
+  "disetujui_manager" atau "ditolak".
+end note
+
+note right of UC_FinanceReview
+  Finance memproses SPPD
+  dengan status "disetujui_manager".
+  Hasil final menjadi
+  "disetujui" atau "ditolak".
+end note
+
+note bottom of Pegawai
+  Berdasarkan policy saat ini,
+  pegawai terutama berperan untuk
+  melihat status/detail pengajuan.
+end note
+
+@enduml

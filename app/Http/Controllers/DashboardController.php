@@ -12,6 +12,11 @@ class DashboardController extends Controller
     public function __invoke(): View
     {
         $user = Auth::user();
+        $pendingStatusesByRole = [
+            'manager' => ['diajukan'],
+            'direksi' => ['disetujui_manager'],
+            'admin' => ['diajukan', 'disetujui_manager'],
+        ];
 
         $pegawaiStats = null;
         $managerPending = null;
@@ -30,8 +35,8 @@ class DashboardController extends Controller
             ];
         }
 
-        if (in_array($user->role, ['manager', 'admin'])) {
-            $managerPending = SppdRequest::where('status', 'diajukan')->latest('id')->take(10)->get();
+        if (array_key_exists($user->role, $pendingStatusesByRole)) {
+            $managerPending = SppdRequest::whereIn('status', $pendingStatusesByRole[$user->role])->latest('id')->take(10)->get();
         }
 
         if ($user->role === 'admin') {

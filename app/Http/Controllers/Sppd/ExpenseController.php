@@ -14,7 +14,9 @@ class ExpenseController extends Controller
     public function store(StoreExpenseRequest $request, SppdRequest $sppd): RedirectResponse
     {
         $this->authorize('update', $sppd);
-        $sppd->expenses()->create($request->validated());
+        $payload = $request->validated();
+        $payload['mata_uang'] = $payload['mata_uang'] ?? 'IDR';
+        $sppd->expenses()->create($payload);
         return redirect()->route('sppd.show', $sppd);
     }
 
@@ -24,7 +26,9 @@ class ExpenseController extends Controller
         if ($expense->sppd_id !== $sppd->id) {
             abort(404);
         }
-        $expense->update($request->validated());
+        $payload = $request->validated();
+        $payload['mata_uang'] = $payload['mata_uang'] ?? 'IDR';
+        $expense->update($payload);
         return redirect()->route('sppd.show', $sppd);
     }
 

@@ -26,9 +26,11 @@ class UpdateSppdRequest extends FormRequest
             'tanggal_pulang' => ['sometimes','required','date','after_or_equal:tanggal_berangkat'],
             'lama_hari' => ['sometimes','required','integer','min:1'],
             'maksud_perjalanan' => ['sometimes','required','string'],
-            'status' => ['sometimes','required','string','in:draft,diajukan,disetujui,ditolak,selesai'],
+            'status' => ['sometimes','required','string','in:draft,diajukan,disetujui_manager,disetujui,ditolak,selesai'],
             'alasan_penolakan' => ['nullable','string'],
             'siap_bayar' => ['nullable','boolean'],
+            'anggota' => ['nullable','array'],
+            'anggota.*' => ['required','string','max:255'],
         ];
     }
 }

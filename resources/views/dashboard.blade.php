@@ -38,7 +38,7 @@
     @if(isset($managerPending))
         <div class="mt-6 bg-white dark:bg-gray-800 overflow-hidden shadow rounded-xl ring-1 ring-gray-100 dark:ring-gray-700">
             <div class="p-6 text-gray-900 dark:text-gray-100">
-                <h3 class="font-semibold mb-3">Antrian Persetujuan</h3>
+                <h3 class="font-semibold mb-3">Antrian Persetujuan {{ ucfirst(auth()->user()->role) }}</h3>
                 @if($managerPending->count())
                     <ul class="list-disc ml-4">
                         @foreach($managerPending as $r)
@@ -63,7 +63,7 @@
                                 <li class="py-3 flex items-center justify-between">
                                     <div>
                                         <div class="font-medium">{{ $item->kode }} • {{ $item->tujuan }}</div>
-                                        <div class="text-xs text-gray-500">{{ ucfirst($item->status) }} • {{ $item->updated_at->diffForHumans() }}</div>
+                                        <div class="text-xs text-gray-500">{{ ucfirst(str_replace('_', ' ', $item->status)) }} • {{ $item->updated_at->diffForHumans() }}</div>
                                     </div>
                                     <a href="{{ route('sppd.show', $item) }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Lihat</a>
                                 </li>

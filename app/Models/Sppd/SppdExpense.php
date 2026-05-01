@@ -12,8 +12,10 @@ class SppdExpense extends Model
     protected $fillable = [
         'sppd_id',
         'kategori',
+        'participant_name',
         'deskripsi',
         'jumlah',
+        'jumlah_hari',
         'mata_uang',
         'tanggal',
         'travel_category_id',
@@ -21,6 +23,7 @@ class SppdExpense extends Model
 
     protected $casts = [
         'jumlah' => 'decimal:2',
+        'jumlah_hari' => 'integer',
         'tanggal' => 'date',
     ];
 

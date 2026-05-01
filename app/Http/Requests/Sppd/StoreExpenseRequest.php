@@ -15,8 +15,10 @@ class StoreExpenseRequest extends FormRequest
     {
         return [
             'kategori' => ['required','string','in:transport,akomodasi,harian,lainnya,uang_makan,cuci_pakaian'],
+            'participant_name' => ['required','string','max:255'],
             'deskripsi' => ['nullable','string','max:255'],
             'jumlah' => ['required','numeric','min:0'],
+            'jumlah_hari' => ['required','integer','min:1'],
             'mata_uang' => ['nullable','string','max:10'],
             'tanggal' => ['required','date'],
         ];

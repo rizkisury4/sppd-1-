@@ -27,7 +27,9 @@ class StoreSppdRequest extends FormRequest
             'tanggal_pulang' => ['required','date','after_or_equal:tanggal_berangkat'],
             'lama_hari' => ['required','integer','min:1'],
             'maksud_perjalanan' => ['required','string'],
-            'status' => ['nullable','string','in:draft,diajukan,disetujui,ditolak,selesai'],
+            'status' => ['nullable','string','in:draft,diajukan,disetujui_manager,disetujui,ditolak,selesai'],
+            'anggota' => ['nullable','array'],
+            'anggota.*' => ['required','string','max:255'],
         ];
     }
 }

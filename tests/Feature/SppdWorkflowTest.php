@@ -17,7 +17,7 @@ class SppdWorkflowTest extends TestCase
 
     public function test_ajukan_creates_approval_trail(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
         $sppd = SppdRequest::create([
             'kode' => 'SPPD-WF-1',
@@ -41,6 +41,7 @@ class SppdWorkflowTest extends TestCase
         Event::fake();
         $pegawai = User::factory()->create();
         $manager = User::factory()->create(['role' => 'manager']);
+        $direksi = User::factory()->create(['role' => 'direksi']);
         $this->actingAs($pegawai);
         $sppd = SppdRequest::create([
             'kode' => 'SPPD-WF-2',
@@ -56,8 +57,25 @@ class SppdWorkflowTest extends TestCase
         $this->actingAs($manager);
         $resp = $this->post(route('sppd.setujui', $sppd));
         $resp->assertRedirect(route('sppd.show', $sppd));
+        $this->assertDatabaseHas('sppd_requests', ['id' => $sppd->id, 'status' => 'disetujui_manager']);
+        $this->assertDatabaseHas('sppd_approvals', [
+            'sppd_id' => $sppd->id,
+            'approver_id' => $manager->id,
+            'status' => 'disetujui',
+            'catatan' => 'Disetujui Manager',
+        ]);
+        Event::assertNotDispatched(SppdApproved::class);
+
+        $this->actingAs($direksi);
+        $resp = $this->post(route('sppd.setujui', $sppd->fresh()));
+        $resp->assertRedirect(route('sppd.show', $sppd));
         $this->assertDatabaseHas('sppd_requests', ['id' => $sppd->id, 'status' => 'disetujui']);
-        $this->assertDatabaseHas('sppd_approvals', ['sppd_id' => $sppd->id, 'status' => 'disetujui']);
+        $this->assertDatabaseHas('sppd_approvals', [
+            'sppd_id' => $sppd->id,
+            'approver_id' => $direksi->id,
+            'status' => 'disetujui',
+            'catatan' => 'Disetujui Direksi',
+        ]);
         Event::assertDispatched(SppdApproved::class);
     }
 

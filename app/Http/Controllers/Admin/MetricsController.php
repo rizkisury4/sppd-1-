@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\Sppd\SppdExpense;
 use App\Models\Sppd\SppdRequest;
 use App\Models\User;
@@ -18,6 +19,7 @@ class MetricsController extends Controller
         abort_if($request->user()->role !== 'admin', 403);
 
         $totalUsers = User::count();
+        $totalEmployees = Employee::count();
         $totalSPT = SppdRequest::count();
         $sptDiterima = SppdRequest::where('status', 'disetujui')->count();
         $sptDitolak = SppdRequest::where('status', 'ditolak')->count();
@@ -104,8 +106,13 @@ class MetricsController extends Controller
             $row['active'] = $activeMap[$row['id']] ?? false;
         }
 
+        $employees = Employee::latest('id')
+            ->limit(10)
+            ->get(['id', 'nip', 'name', 'position', 'employment_status', 'active']);
+
         return view('admin.metrics', compact(
             'totalUsers',
+            'totalEmployees',
             'totalSPT',
             'sptDiterima',
             'sptDitolak',
@@ -117,7 +124,8 @@ class MetricsController extends Controller
             'labels',
             'series',
             'sppds',
-            'userRows'
+            'userRows',
+            'employees'
         ));
     }
 }

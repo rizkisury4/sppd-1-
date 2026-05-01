@@ -4,8 +4,9 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('SPPD') }}
             </h2>
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('sppd.create') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-blue-600 text-white hover:bg-blue-700 ring-blue-700/20 dark:bg-blue-500 dark:hover:bg-blue-400 dark:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Buat SPPD</a>
-        </div>
+            @endif        </div>
     </x-slot>
 
     <div class="py-12">
@@ -19,7 +20,7 @@
                                 <select name="pegawai_id" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                                     <option value="">Semua</option>
                                     @foreach($pegawaiOptions as $p)
-                                        <option value="{{ $p->id }}" @selected(($filters['pegawai_id'] ?? '')==$p->id)>{{ $p->name }} ({{ $p->email }})</option>
+                                        <option value="{{ $p['id'] }}" @selected(($filters['pegawai_id'] ?? '')==$p['id'])>{{ $p['label'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -28,7 +29,7 @@
                             <label class="block mb-1">Status</label>
                             <select name="status" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                                 <option value="">Semua</option>
-                                @foreach(['draft','diajukan','disetujui','ditolak','selesai'] as $st)
+                                @foreach(['draft','diajukan','disetujui_manager','disetujui','ditolak','selesai'] as $st)
                                     <option value="{{ $st }}" @selected(($filters['status'] ?? '')===$st)>{{ ucfirst($st) }}</option>
                                 @endforeach
                             </select>
@@ -69,7 +70,7 @@
                                             <td class="px-3 py-2">{{ $r->status }}</td>
                                             <td class="px-3 py-2">
                                                 <a class="text-blue-600 dark:text-blue-400 hover:underline font-medium" href="{{ route('sppd.show', $r) }}">Detail</a>
-                                                @if(in_array(auth()->user()->role, ['admin','manager']))
+                                                @if(in_array(auth()->user()->role, ['admin','manager','direksi'], true))
                                                     <span class="mx-1">|</span>
                                                     <a class="text-emerald-700 dark:text-emerald-400 hover:underline font-medium" href="{{ route('sppd.pdf', $r) }}">PDF</a>
                                                 @endif

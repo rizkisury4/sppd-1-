@@ -5,11 +5,14 @@ namespace Tests\Unit;
 use App\Http\Requests\Sppd\StoreExpenseRequest;
 use App\Http\Requests\Sppd\StoreSppdRequest;
 use App\Http\Requests\Sppd\UpdateSppdRequest;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
 class SppdRequestValidationTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_store_sppd_request_requires_core_fields(): void
     {
         $request = new StoreSppdRequest();
@@ -28,6 +31,7 @@ class SppdRequestValidationTest extends TestCase
             'tujuan' => 'Jakarta',
             'kota' => 'Jakarta',
             'negara' => 'ID',
+            'jenis_perjalanan' => 'non_diklat',
             'tanggal_berangkat' => now()->toDateString(),
             'tanggal_pulang' => now()->addDays(2)->toDateString(),
             'lama_hari' => 2,
@@ -53,8 +57,10 @@ class SppdRequestValidationTest extends TestCase
 
         $good = [
             'kategori' => 'transport',
+            'participant_name' => 'Budi',
             'deskripsi' => 'Taksi',
             'jumlah' => 150000,
+            'jumlah_hari' => 1,
             'mata_uang' => 'IDR',
             'tanggal' => now()->toDateString(),
         ];

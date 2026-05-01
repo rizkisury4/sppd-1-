@@ -12,6 +12,10 @@
                         <div class="mt-1 text-3xl font-bold text-slate-800 dark:text-slate-100">{{ $totalUsers }}</div>
                     </div>
                     <div class="p-4 rounded-lg ring-1 ring-gray-200 dark:ring-white/10">
+                        <div class="text-xs uppercase text-slate-500">Total Pegawai</div>
+                        <div class="mt-1 text-3xl font-bold text-slate-800 dark:text-slate-100">{{ $totalEmployees }}</div>
+                    </div>
+                    <div class="p-4 rounded-lg ring-1 ring-gray-200 dark:ring-white/10">
                         <div class="text-xs uppercase text-slate-500">Total SPT</div>
                         <div class="mt-1 text-3xl font-bold text-slate-800 dark:text-slate-100">{{ $totalSPT }}</div>
                     </div>
@@ -94,12 +98,50 @@
 
             <div class="bg-white dark:bg-gray-800 shadow rounded-xl ring-1 ring-gray-100 dark:ring-gray-700 p-6">
                 <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Master Data Kepegawaian</h3>
+                        <p class="text-xs text-slate-500 mt-1">10 data terakhir yang masuk ke master pegawai.</p>
+                    </div>
+                    <a href="{{ route('admin.employees.index') }}" class="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">Kelola Data Pegawai</a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left text-sm text-slate-700 dark:text-slate-100">
+                        <thead class="border-b border-gray-200 text-slate-500 dark:border-gray-700 dark:text-slate-300">
+                            <tr>
+                                <th class="px-3 py-2">NIP</th>
+                                <th class="px-3 py-2">Nama</th>
+                                <th class="px-3 py-2">Jabatan</th>
+                                <th class="px-3 py-2">Status</th>
+                                <th class="px-3 py-2">Aktif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($employees as $employee)
+                                <tr class="border-b border-gray-100 dark:border-gray-700">
+                                    <td class="px-3 py-2">{{ $employee->nip }}</td>
+                                    <td class="px-3 py-2">{{ $employee->name }}</td>
+                                    <td class="px-3 py-2">{{ $employee->position }}</td>
+                                    <td class="px-3 py-2">{{ $employee->employment_status }}</td>
+                                    <td class="px-3 py-2">{{ $employee->active ? 'Ya' : 'Tidak' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-3 py-4 text-slate-500">Belum ada data pegawai.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 shadow rounded-xl ring-1 ring-gray-100 dark:ring-gray-700 p-6">
+                <div class="flex items-center justify-between mb-4">
                     <h3 class="font-semibold text-lg text-slate-800 dark:text-slate-100">Master Data User — Data SPT</h3>
                     <span class="text-xs text-slate-500">Top 50 terakhir</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="border-b border-gray-200 dark:border-gray-700">
+                    <table class="min-w-full text-left text-sm text-slate-700 dark:text-slate-100">
+                        <thead class="border-b border-gray-200 text-slate-500 dark:border-gray-700 dark:text-slate-300">
                             <tr>
                                 <th class="px-3 py-2">Kode</th>
                                 <th class="px-3 py-2">Pegawai</th>
@@ -116,7 +158,7 @@
                             @forelse($sppds as $r)
                                 <tr class="border-b border-gray-100 dark:border-gray-700">
                                     <td class="px-3 py-2">{{ $r->kode }}</td>
-                                    <td class="px-3 py-2">{{ $r->pegawai?->name ?? '-' }}</td>
+                                    <td class="px-3 py-2">{{ $r->pegawai?->employee?->name ?? $r->pegawai?->name ?? '-' }}</td>
                                     <td class="px-3 py-2">{{ $r->tujuan }}</td>
                                     <td class="px-3 py-2">{{ $r->kota ?? '-' }}</td>
                                     <td class="px-3 py-2">{{ $r->tanggal_berangkat?->format('Y-m-d') }}</td>
@@ -143,8 +185,8 @@
                     <span class="text-xs text-slate-500">Semua user</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="border-b border-gray-200 dark:border-gray-700">
+                    <table class="min-w-full text-left text-sm text-slate-700 dark:text-slate-100">
+                        <thead class="border-b border-gray-200 text-slate-500 dark:border-gray-700 dark:text-slate-300">
                             <tr>
                                 <th class="px-3 py-2">Nama</th>
                                 <th class="px-3 py-2">Jabatan</th>

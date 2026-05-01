@@ -10,12 +10,21 @@
                         $statusStyles = [
                             'draft' => 'bg-slate-100 text-slate-800',
                             'diajukan' => 'bg-amber-100 text-amber-800',
-                            'disetujui_admin' => 'bg-blue-100 text-blue-800',
+                            'disetujui_manager' => 'bg-blue-100 text-blue-800',
                             'disetujui' => 'bg-emerald-100 text-emerald-800',
                             'ditolak' => 'bg-rose-100 text-rose-800',
                             'selesai' => 'bg-indigo-100 text-indigo-800',
                         ];
+                        $statusLabels = [
+                            'draft' => 'Draft',
+                            'diajukan' => 'Diajukan',
+                            'disetujui_manager' => 'Disetujui Manager',
+                            'disetujui' => 'Disetujui',
+                            'ditolak' => 'Ditolak',
+                            'selesai' => 'Selesai',
+                        ];
                         $style = $statusStyles[$sppd->status] ?? 'bg-slate-100 text-slate-800';
+                        $statusLabel = $statusLabels[$sppd->status] ?? ucfirst(str_replace('_', ' ', $sppd->status));
                     @endphp
                     <div class="grid sm:grid-cols-3 gap-4">
                         <div class="p-4 rounded bg-slate-50 dark:bg-slate-700">
@@ -28,10 +37,17 @@
                         </div>
                         <div class="p-4 rounded bg-slate-50 dark:bg-slate-700">
                             <div class="text-xs uppercase text-slate-500">Status</div>
-                            <span class="inline-flex items-center text-sm font-semibold px-2.5 py-1 rounded-full {{ $style }}">{{ ucfirst($sppd->status) }}</span>
+                            <span class="inline-flex items-center text-sm font-semibold px-2.5 py-1 rounded-full {{ $style }}">{{ $statusLabel }}</span>
                         </div>
                     </div>
                 </div>
+
+                @if($sppd->status === 'ditolak' && filled($sppd->alasan_penolakan))
+                    <div class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-900 dark:border-rose-700/60 dark:bg-rose-900/20 dark:text-rose-100">
+                        <div class="text-sm font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Alasan Penolakan</div>
+                        <p class="mt-2 text-sm leading-6">{{ $sppd->alasan_penolakan }}</p>
+                    </div>
+                @endif
 
                 <div x-data="{ open: false }" class="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
                     <button type="button" x-on:click="open = !open" class="w-full flex items-center justify-between">
@@ -54,7 +70,7 @@
                                     <div class="sm:col-span-2"><span class="text-slate-500">Sumber Anggaran:</span> <span class="font-medium">{{ $sppd->sumber_anggaran }}</span></div>
                                 @endif
                             </div>
-                            @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                            @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                                 <details class="mt-3">
                                     <summary class="cursor-pointer text-sm text-blue-600">Edit Tujuan & Lokasi</summary>
                                     <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="mt-2 grid sm:grid-cols-2 gap-3">
@@ -104,7 +120,7 @@
                                 <div><span class="text-slate-500">Pulang:</span> <span class="font-medium">{{ $sppd->tanggal_pulang->format('Y-m-d') }}</span></div>
                                 <div><span class="text-slate-500">Lama:</span> <span class="font-medium">{{ $sppd->lama_hari }} hari</span></div>
                             </div>
-                            @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                            @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                                 <details class="mt-3">
                                     <summary class="cursor-pointer text-sm text-blue-600">Edit Tanggal</summary>
                                     <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="mt-2 grid sm:grid-cols-3 gap-3">
@@ -136,15 +152,46 @@
                                 @if(!empty($sppd->transportasi))
                                     <p><span class="font-semibold">Transportasi:</span> {{ $sppd->transportasi }}</p>
                                 @endif
+                                @if(!empty($sppd->anggota))
+                                    <div class="pt-2">
+                                        <p><span class="font-semibold">Anggota Perjalanan:</span></p>
+                                        <ol class="mt-1 list-decimal list-inside space-y-1">
+                                            @foreach($sppd->anggota as $nama)
+                                                <li>{{ $nama }}</li>
+                                            @endforeach
+                                        </ol>
+                                    </div>
+                                @endif
                             </div>
-                            @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                            @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                                 <details class="mt-3">
                                     <summary class="cursor-pointer text-sm text-blue-600">Edit Rincian</summary>
-                                    <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="mt-2 space-y-2">
+                                    <form method="POST" action="{{ route('sppd.update', $sppd) }}"
+                                          x-data="{ anggota: {{ Js::from($sppd->anggota ?? ['']) }}, employeeOptions: {{ Js::from($employeeOptions) }} }"
+                                          class="mt-2 space-y-3">
                                         @csrf
                                         @method('PATCH')
                                         <textarea name="maksud_perjalanan" rows="4" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">{{ $sppd->maksud_perjalanan }}</textarea>
                                         <textarea name="transportasi" rows="3" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" placeholder="Transportasi yang digunakan">{{ $sppd->transportasi }}</textarea>
+                                        <div class="border rounded-lg p-4 bg-slate-100 dark:bg-slate-900/40">
+                                            <h5 class="text-sm font-semibold mb-3">Pegawai / Anggota Perjalanan</h5>
+                                            <template x-for="(nama, i) in anggota" :key="i">
+                                                <div class="flex gap-2 mb-2">
+                                                    <select :name="'anggota[]'" x-model="anggota[i]"
+                                                            class="flex-1 rounded border-gray-300 bg-white dark:bg-slate-700 text-sm">
+                                                        <option value="">Pilih anggota</option>
+                                                        <template x-for="employee in employeeOptions" :key="employee.id">
+                                                            <option :value="employee.value" x-text="employee.value"></option>
+                                                        </template>
+                                                    </select>
+                                                    <button type="button" x-show="anggota.length > 1"
+                                                            x-on:click="anggota.splice(i, 1)"
+                                                            class="px-2 py-1 text-rose-600 hover:text-rose-800 text-sm">✕</button>
+                                                </div>
+                                            </template>
+                                            <button type="button" x-on:click="anggota.push('')"
+                                                    class="mt-1 px-3 py-1 bg-indigo-600 text-white rounded text-sm">+ Tambah Pegawai</button>
+                                        </div>
                                         <div class="mt-2">
                                             <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Simpan Perubahan</button>
                                         </div>
@@ -155,38 +202,40 @@
                     </div>
                 </div>
 
-                @if(auth()->user()->id === $sppd->pegawai_id && $sppd->status === 'ditolak' && !empty($sppd->alasan_penolakan))
-                    <div class="rounded-lg border border-rose-200 bg-rose-50 dark:border-rose-700/60 dark:bg-rose-900/20 p-4">
-                        <h3 class="font-semibold text-rose-700 dark:text-rose-300">Alasan Penolakan</h3>
-                        <p class="mt-2 text-sm text-rose-700/90 dark:text-rose-200">{{ $sppd->alasan_penolakan }}</p>
-                    </div>
-                @endif
-
                 
 
-                @if(auth()->user()->id === $sppd->pegawai_id && in_array($sppd->status, ['draft','ditolak']))
+                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                     <div>
                         <h3 class="font-semibold mb-2">Tambah Biaya</h3>
-                        <form method="POST" action="{{ route('sppd.expenses.store', $sppd) }}" class="grid sm:grid-cols-4 gap-2 items-end">
+                        <form method="POST" action="{{ route('sppd.expenses.store', $sppd) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
                             @csrf
                             <div>
-                                <label class="block mb-1">Kategori</label>
-                                <select name="kategori" class="w-full rounded border-gray-300">
+                                <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Pegawai</label>
+                                <select name="participant_name" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
+                                    <option value="">Pilih pegawai</option>
+                                    @foreach($participantOptions as $participant)
+                                        <option value="{{ $participant }}">{{ $participant }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Kategori</label>
+                                <select name="kategori" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
                                     <option value="uang_makan">Uang Makan</option>
                                     <option value="cuci_pakaian">Cuci Pakaian</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block mb-1">Rate</label>
-                                <input type="number" step="0.01" name="jumlah" class="w-full rounded border-gray-300" required />
+                                <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rate</label>
+                                <input type="number" step="0.01" name="jumlah" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" required />
                             </div>
                             <div>
-                                <label class="block mb-1">Jumlah Hari</label>
-                                <input type="number" name="jumlah_hari" min="1" class="w-full rounded border-gray-300" />
+                                <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Jumlah Hari</label>
+                                <input type="number" name="jumlah_hari" min="1" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
                                 <input type="hidden" name="tanggal" value="{{ now()->toDateString() }}" />
                             </div>
                             <div>
-                                <button class="px-4 py-2 bg-blue-600 text-white rounded">Tambah</button>
+                                <button class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">Tambah</button>
                             </div>
                         </form>
                     </div>
@@ -198,10 +247,12 @@
                         <table class="min-w-full text-left text-sm">
                             <thead>
                                 <tr>
+                                    <th class="px-3 py-2">Pegawai</th>
                                     <th class="px-3 py-2">Kategori</th>
                                     <th class="px-3 py-2">Rate</th>
                                     <th class="px-3 py-2">Jumlah Hari</th>
-                                    @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                                    <th class="px-3 py-2 text-right">Total</th>
+                                    @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                                         <th class="px-3 py-2">Aksi</th>
                                     @endif
                                 </tr>
@@ -209,34 +260,45 @@
                             <tbody>
                                 @foreach($sppd->expenses as $e)
                                     <tr class="border-b border-gray-100 dark:border-gray-700">
+                                        <td class="px-3 py-2">{{ $e->participant_name ?: 'Semua Pegawai' }}</td>
                                         <td class="px-3 py-2">{{ $e->kategori }}</td>
-                                        <td class="px-3 py-2">{{ number_format($e->jumlah, 2) }} {{ $e->mata_uang }}</td>
-                                        <td class="px-3 py-2">{{ $e->tanggal->format('Y-m-d') }}</td>
-                                        @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                                        <td class="px-3 py-2">{{ number_format((float) $e->jumlah, 0, ',', '.') }} {{ $e->mata_uang }}</td>
+                                        <td class="px-3 py-2">{{ $e->jumlah_hari }}</td>
+                                        <td class="px-3 py-2 text-right">{{ number_format((float) $e->jumlah, 0, ',', '.') }}</td>
+                                        @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                                             <td class="px-3 py-2" x-data="{ open: false }">
                                                 <button type="button" class="text-blue-600 hover:underline" x-on:click="open = !open">Aksi</button>
                                                 <div x-show="open" x-transition class="mt-2 space-y-2">
-                                                    <form method="POST" action="{{ route('sppd.expenses.update', [$sppd, $e]) }}" class="grid sm:grid-cols-4 gap-2 items-end">
+                                                    <form method="POST" action="{{ route('sppd.expenses.update', [$sppd, $e]) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
                                                         @csrf
                                                         @method('PUT')
                                                         <div>
-                                                            <label class="block mb-1">Kategori</label>
-                                                            <select name="kategori" class="w-full rounded border-gray-300">
+                                                            <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Pegawai</label>
+                                                            <select name="participant_name" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
+                                                                <option value="">Pilih pegawai</option>
+                                                                @foreach($participantOptions as $participant)
+                                                                    <option value="{{ $participant }}" @selected($e->participant_name === $participant)>{{ $participant }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Kategori</label>
+                                                            <select name="kategori" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
                                                                 <option value="uang_makan" @selected($e->kategori==='uang_makan')>Uang Makan</option>
                                                                 <option value="cuci_pakaian" @selected($e->kategori==='cuci_pakaian')>Cuci Pakaian</option>
                                                             </select>
                                                         </div>
                                                         <div>
-                                                            <label class="block mb-1">Rate</label>
-                                                            <input type="number" step="0.01" name="jumlah" class="w-full rounded border-gray-300" value="{{ $e->jumlah }}" required />
+                                                            <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rate</label>
+                                                            <input type="number" step="0.01" name="jumlah" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" value="{{ $e->jumlah }}" required />
                                                         </div>
                                                         <div>
-                                                            <label class="block mb-1">Jumlah Hari</label>
-                                                            <input type="number" name="jumlah_hari" min="1" class="w-full rounded border-gray-300" />
+                                                            <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Jumlah Hari</label>
+                                                            <input type="number" name="jumlah_hari" min="1" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" value="{{ $e->jumlah_hari }}" />
                                                             <input type="hidden" name="tanggal" class="w-full rounded border-gray-300" value="{{ $e->tanggal->format('Y-m-d') }}" />
                                                         </div>
                                                         <div>
-                                                            <button class="px-3 py-2 bg-indigo-600 text-white rounded">Simpan</button>
+                                                            <button class="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Simpan</button>
                                                         </div>
                                                     </form>
                                                     <form method="POST" action="{{ route('sppd.expenses.destroy', [$sppd, $e]) }}">
@@ -255,13 +317,18 @@
                         <p>Belum ada biaya.</p>
                     @endif
                 </div>
-                 @if((auth()->user()->id === $sppd->pegawai_id) && in_array($sppd->status, ['draft','ditolak']))
+                @if(in_array(auth()->user()->role, ['admin','manager','direksi'], true))
+                    <div>
+                        <a href="{{ route('sppd.pdf', $sppd) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Unduh PDF</a>
+                    </div>
+                @endif
+                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Pejabat Berwenang Memberi Perintah</h3>
                         <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="max-w-lg">
                             @csrf
                             @method('PATCH')
-                            <label class="block mb-1 text-sm">Pilih Pejabat (Admin/Manager)</label>
+                            <label class="block mb-1 text-sm">Pilih Pejabat (Admin/Manager/Direksi)</label>
                             <select name="pejabat_perintah_id" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">
                                 <option value="">-</option>
                                 @foreach($officers as $u)
@@ -275,25 +342,7 @@
                     </div>
                 @endif
 
-                @if(auth()->user()->role === 'admin' && $sppd->status === 'diajukan' && !$sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'admin'))->exists())
-                    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 ring-1 ring-gray-100 dark:ring-gray-700">
-                            <h3 class="font-semibold mb-3">Keputusan Admin</h3>
-                            <div class="flex flex-wrap gap-3">
-                                <form method="POST" action="{{ route('sppd.setujui', $sppd) }}">
-                                    @csrf
-                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Setujui</button>
-                                </form>
-                                <form method="POST" action="{{ route('sppd.tolak', $sppd) }}" class="flex items-center gap-2">
-                                    @csrf
-                                    <input type="text" name="alasan_penolakan" class="rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Alasan penolakan" required />
-                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-rose-600 text-white hover:bg-rose-700 ring-rose-700/20 dark:bg-rose-500 dark:hover:bg-rose-400 dark:ring-white/10">Tolak</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-                @if(auth()->user()->role === 'manager' && $sppd->status === 'diajukan' && $sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'admin'))->exists() && !$sppd->approvals()->where('status', 'disetujui')->whereHas('approver', fn($q) => $q->where('role', 'manager'))->exists())
+                @if(auth()->user()->role === 'manager' && $sppd->status === 'diajukan')
                     <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 ring-1 ring-gray-100 dark:ring-gray-700">
                             <h3 class="font-semibold mb-3">Keputusan Manager</h3>
@@ -311,10 +360,28 @@
                         </div>
                     </div>
                 @endif
+                @if(auth()->user()->role === 'direksi' && $sppd->status === 'disetujui_manager')
+                    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div class="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 ring-1 ring-gray-100 dark:ring-gray-700">
+                            <h3 class="font-semibold mb-3">Keputusan Direksi</h3>
+                            <div class="flex flex-wrap gap-3">
+                                <form method="POST" action="{{ route('sppd.setujui', $sppd) }}">
+                                    @csrf
+                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Setujui</button>
+                                </form>
+                                <form method="POST" action="{{ route('sppd.tolak', $sppd) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    <input type="text" name="alasan_penolakan" class="rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Alasan penolakan" required />
+                                    <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-rose-600 text-white hover:bg-rose-700 ring-rose-700/20 dark:bg-rose-500 dark:hover:bg-rose-400 dark:ring-white/10">Tolak</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <div>
                     <h3 class="font-semibold mt-6 mb-2">Unggah Lampiran</h3>
-                    @if(auth()->user()->id === $sppd->pegawai_id || auth()->user()->role === 'admin')
+                    @if(auth()->user()->role === 'admin')
                         <form method="POST" action="{{ route('sppd.attachments.store', $sppd) }}" enctype="multipart/form-data" class="grid sm:grid-cols-4 gap-2 items-end">
                             @csrf
                             <div>
@@ -345,9 +412,9 @@
                                     <div>
                                         <span class="font-medium capitalize">{{ str_replace('_',' ', $a->jenis) }}</span>
                                         <span class="text-slate-500 ml-2 text-xs">{{ $a->mime }}, {{ number_format(($a->ukuran ?? 0)/1024, 1) }} KB</span>
-                                        <a class="ml-3 text-blue-600 dark:text-blue-400 hover:underline" href="{{ asset('storage/'.$a->path) }}" target="_blank">Lihat</a>
+                                        <a class="ml-3 text-blue-600 dark:text-blue-400 hover:underline" href="{{ route('sppd.attachments.show', [$sppd, $a]) }}" target="_blank">Lihat</a>
                                     </div>
-                                    @if(auth()->user()->id === $sppd->pegawai_id || auth()->user()->role === 'admin')
+                                    @if(auth()->user()->role === 'admin')
                                         <form method="POST" action="{{ route('sppd.attachments.destroy', [$sppd, $a]) }}">
                                             @csrf
                                             @method('DELETE')
@@ -361,32 +428,65 @@
                         <p>Belum ada lampiran.</p>
                     @endif
                 </div>
-                @if(auth()->user()->id === $sppd->pegawai_id && in_array($sppd->status, ['draft','ditolak']))
+                {{-- Members Management --}}
+                <div class="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
+                    <h3 class="font-semibold mb-3">Anggota Perjalanan</h3>
+                    @if(!empty($sppd->anggota))
+                        <ol class="list-decimal list-inside space-y-1 text-sm mb-3">
+                            @foreach($sppd->anggota as $nama)
+                                <li>{{ $nama }}</li>
+                            @endforeach
+                        </ol>
+                    @else
+                        <p class="text-sm text-slate-400 mb-3">Belum ada anggota.</p>
+                    @endif
+                    @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
+                        <details>
+                            <summary class="cursor-pointer text-sm text-blue-600">Edit Anggota</summary>
+                            <form method="POST" action="{{ route('sppd.update', $sppd) }}"
+                                  x-data="{ anggota: {{ Js::from($sppd->anggota ?? ['']) }}, employeeOptions: {{ Js::from($employeeOptions) }} }"
+                                  class="mt-3 space-y-2">
+                                @csrf
+                                @method('PATCH')
+                                <template x-for="(nama, i) in anggota" :key="i">
+                                    <div class="flex gap-2 mb-2">
+                                        <select :name="'anggota[]'" x-model="anggota[i]"
+                                                class="flex-1 rounded border-gray-300 bg-white dark:bg-slate-700 text-sm">
+                                            <option value="">Pilih anggota</option>
+                                            <template x-for="employee in employeeOptions" :key="employee.id">
+                                                <option :value="employee.value" x-text="employee.value"></option>
+                                            </template>
+                                        </select>
+                                        <button type="button" x-show="anggota.length > 1"
+                                                x-on:click="anggota.splice(i, 1)"
+                                                class="px-2 py-1 text-rose-600 hover:text-rose-800 text-sm">✕</button>
+                                    </div>
+                                </template>
+                                <div class="flex gap-2 items-center">
+                                    <button type="button" x-on:click="anggota.push('')"
+                                            class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">+ Tambah</button>
+                                    <button class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Simpan Anggota</button>
+                                </div>
+                            </form>
+                        </details>
+                    @endif
+                </div>
+
+                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
                     <div class="flex gap-3 flex-wrap pt-6 border-t border-gray-200 dark:border-gray-700">
                         <form method="POST" action="{{ route('sppd.ajukan', $sppd) }}">
                             @csrf
                             <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-blue-600 text-white hover:bg-blue-700 ring-blue-700/20 dark:bg-blue-500 dark:hover:bg-blue-400 dark:ring-white/10">Ajukan</button>
                         </form>
-                         {{-- tombol PDF DI SINI --}}
-    <a href="{{ route('sppd.pdf', $sppd) }}" 
-       class="px-4 py-2 bg-blue-600 text-white rounded">
-        Unduh PDF
-    </a>
                         @if($sppd->status === 'ditolak')
                             <form method="POST" action="{{ route('sppd.ajukanUlang', $sppd) }}">
                                 @csrf
                                 <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-indigo-600 text-white hover:bg-indigo-700 ring-indigo-700/20 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:ring-white/10">Ajukan Ulang</button>
-                           <div class="mt-6 flex justify-end">
-    <a href="{{ route('sppd.pdf', $sppd) }}" 
-       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-        Unduh PDF
-    </a>
-</div>
                             </form>
-                            
                         @endif
                     </div>
                 @endif
+
             </div>
         </div>
     </div>

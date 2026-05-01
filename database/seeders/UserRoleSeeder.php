@@ -27,6 +27,15 @@ class UserRoleSeeder extends Seeder
                 'role' => 'manager',
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'direksi@example.com'],
+            [
+                'name' => 'Direksi',
+                'password' => Hash::make('password'),
+                'role' => 'direksi',
+            ]
+        );
     }
 }
 

@@ -27,6 +27,17 @@
                         @error('role')<div class="text-rose-600 text-sm mt-1">{{ $message }}</div>@enderror
                     </div>
                     <div>
+                        <label class="block mb-1">Data Karyawan</label>
+                        <select name="employee_id" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800">
+                            <option value="">Tidak ditautkan</option>
+                            @foreach($employees as $employee)
+                                <option value="{{ $employee->id }}" @selected((string) old('employee_id') === (string) $employee->id)>{{ $employee->name }} ({{ $employee->nip }})</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Wajib dipilih jika role user adalah pegawai.</p>
+                        @error('employee_id')<div class="text-rose-600 text-sm mt-1">{{ $message }}</div>@enderror
+                    </div>
+                    <div>
                         <label class="block mb-1">Password</label>
                         <input type="password" name="password" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800" required />
                         @error('password')<div class="text-rose-600 text-sm mt-1">{{ $message }}</div>@enderror

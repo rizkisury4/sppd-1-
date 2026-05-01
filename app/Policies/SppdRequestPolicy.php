@@ -14,27 +14,26 @@ class SppdRequestPolicy
 
     public function view(User $user, SppdRequest $sppd): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $sppd->pegawai_id === $user->id;
+        return in_array($user->role, ['admin','manager','finance','direksi'], true) || $sppd->pegawai_id === $user->id;
     }
 
     public function create(User $user): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager' || $user->role === 'pegawai';
+        return $user->role === 'admin';
     }
 
     public function update(User $user, SppdRequest $sppd): bool
     {
-        return $user->role === 'admin' || $sppd->pegawai_id === $user->id;
+        return $user->role === 'admin';
     }
 
     public function delete(User $user, SppdRequest $sppd): bool
     {
-        return $user->role === 'admin' || $sppd->pegawai_id === $user->id;
+        return $user->role === 'admin';
     }
 
     public function approve(User $user, SppdRequest $sppd): bool
     {
-        return $user->role === 'admin' || $user->role === 'manager';
+        return in_array($user->role, ['manager','direksi'], true);
     }
 }
-

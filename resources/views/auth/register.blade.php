@@ -1,6 +1,6 @@
 <x-guest-layout>
     <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-1">Daftar</h1>
-    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Buat akun PLN SPPD Anda.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Buat akun SPPD PLN EMI Anda.</p>
     <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
         <div>

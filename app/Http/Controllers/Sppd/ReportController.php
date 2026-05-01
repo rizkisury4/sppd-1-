@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sppd;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\Sppd\SppdExpense;
 use App\Models\Sppd\SppdRequest;
 use App\Models\User;
@@ -63,8 +64,18 @@ class ReportController extends Controller
         }
 
         $pegawaiOptions = [];
-        if (in_array($user->role, ['manager','admin'])) {
-            $pegawaiOptions = User::orderBy('name')->get(['id','name','email']);
+        if (in_array($user->role, ['manager','admin','direksi'], true)) {
+            $pegawaiOptions = User::with('employee')
+                ->where('role', 'pegawai')
+                ->whereNotNull('employee_id')
+                ->orderBy('name')
+                ->get(['id','name','email','employee_id'])
+                ->map(fn (User $pegawai) => [
+                    'id' => $pegawai->id,
+                    'label' => $pegawai->employee
+                        ? sprintf('%s (%s)', $pegawai->employee->name, $pegawai->employee->nip)
+                        : sprintf('%s (%s)', $pegawai->name, $pegawai->email),
+                ]);
         }
 
         return view('sppd.rekap', [

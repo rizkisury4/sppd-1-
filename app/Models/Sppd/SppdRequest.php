@@ -31,6 +31,7 @@ class SppdRequest extends Model
         'disetujui_oleh',
         'disetujui_pada',
         'siap_bayar',
+        'anggota',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class SppdRequest extends Model
         'disetujui_pada' => 'datetime',
         'siap_bayar' => 'boolean',
         'lama_hari' => 'integer',
+        'anggota' => 'array',
     ];
 
     public function pegawai()
@@ -75,4 +77,5 @@ class SppdRequest extends Model
     {
         return $this->hasMany(SppdApproval::class, 'sppd_id');
     }
+
 }

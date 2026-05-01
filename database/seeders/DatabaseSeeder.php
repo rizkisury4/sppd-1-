@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DepartmentSeeder::class,
             TravelCategorySeeder::class,
+            UserRoleSeeder::class,
+            FinanceManagerSeeder::class,
+            EmployeeCsvSeeder::class,
         ]);
     }
 }

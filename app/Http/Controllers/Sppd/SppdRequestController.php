@@ -7,6 +7,7 @@ use App\Http\Requests\Sppd\StoreSppdRequest;
 use App\Http\Requests\Sppd\UpdateSppdRequest;
 use App\Events\SppdApproved;
 use App\Events\SppdRejected;
+use App\Models\Employee;
 use App\Models\Sppd\SppdRequest;
 use App\Models\Sppd\SppdApproval;
 use App\Models\User;
@@ -24,7 +25,7 @@ class SppdRequestController extends Controller
         if ($user->role === 'pegawai') {
             $q->where('pegawai_id', $user->id);
         }
-        if (in_array($user->role, ['manager','admin','finance']) && $request->filled('pegawai_id')) {
+        if (in_array($user->role, ['manager','admin','finance','direksi'], true) && $request->filled('pegawai_id')) {
             $q->where('pegawai_id', $request->integer('pegawai_id'));
         }
         if ($request->filled('status')) {
@@ -40,8 +41,8 @@ class SppdRequestController extends Controller
         }
         $requests = $q->latest('id')->paginate(10);
         $pegawaiOptions = [];
-        if (in_array($user->role, ['manager','admin'])) {
-            $pegawaiOptions = User::orderBy('name')->get(['id','name','email']);
+        if (in_array($user->role, ['manager','admin','direksi'], true)) {
+            $pegawaiOptions = $this->pegawaiFilterOptions();
         }
         return view('sppd.index', [
             'requests' => $requests,
@@ -58,7 +59,10 @@ class SppdRequestController extends Controller
     public function create(): View
     {
         $this->authorize('create', SppdRequest::class);
-        return view('sppd.create');
+
+        return view('sppd.create', [
+            'employeeOptions' => $this->employeeOptions(),
+        ]);
     }
 
     public function store(StoreSppdRequest $request): RedirectResponse
@@ -78,14 +82,60 @@ class SppdRequestController extends Controller
     {
         $this->authorize('view', $sppd);
         $sppd->load(['expenses', 'attachments', 'approvals']);
-        $officers = \App\Models\User::whereIn('role', ['admin','manager'])->orderBy('name')->get(['id','name','email','role']);
-        return view('sppd.show', compact('sppd', 'officers'));
+        $officers = \App\Models\User::whereIn('role', ['admin','manager','direksi'])->orderBy('name')->get(['id','name','email','role']);
+
+        return view('sppd.show', [
+            'sppd' => $sppd,
+            'officers' => $officers,
+            'employeeOptions' => $this->employeeOptions(),
+            'participantOptions' => $this->participantOptions($sppd),
+        ]);
+    }
+
+    protected function employeeOptions()
+    {
+        return Employee::orderBy('name')
+            ->get(['id', 'name', 'nip'])
+            ->map(fn (Employee $employee) => [
+                'id' => $employee->id,
+                'value' => sprintf('%s (%s)', $employee->name, $employee->nip),
+            ])
+            ->all();
+    }
+
+    protected function pegawaiFilterOptions()
+    {
+        return User::with('employee')
+            ->where('role', 'pegawai')
+            ->whereNotNull('employee_id')
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'employee_id'])
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'label' => $user->employee
+                    ? sprintf('%s (%s)', $user->employee->name, $user->employee->nip)
+                    : sprintf('%s (%s)', $user->name, $user->email),
+            ])
+            ->all();
+    }
+
+    protected function participantOptions(SppdRequest $sppd): array
+    {
+        $participants = collect($sppd->anggota ?? [])
+            ->filter(fn ($name) => filled($name))
+            ->values();
+
+        if ($participants->isEmpty() && $sppd->pegawai?->name) {
+            $participants->push($sppd->pegawai->name);
+        }
+
+        return $participants->all();
     }
 
     public function pdf(SppdRequest $sppd)
     {
         $this->authorize('view', $sppd);
-        $sppd->load(['expenses', 'attachments', 'approvals', 'pegawai', 'pejabatPerintah']);
+        $sppd->load(['expenses', 'attachments', 'approvals.approver', 'pegawai', 'pejabatPerintah']);
         $html = view('sppd.pdf', compact('sppd'))->render();
         $mpdf = new \Mpdf\Mpdf([
             'margin_top' => 20,
@@ -141,40 +191,33 @@ class SppdRequestController extends Controller
     {
         $this->authorize('approve', $sppd);
         $role = Auth::user()->role;
-        if ($role === 'admin') {
-            // Admin approve pertama
+        if ($role === 'manager' && $sppd->status === 'diajukan') {
+            $sppd->update([
+                'status' => 'disetujui_manager',
+                'alasan_penolakan' => null,
+            ]);
             SppdApproval::create([
                 'sppd_id' => $sppd->id,
                 'approver_id' => Auth::id(),
                 'status' => 'disetujui',
-                'catatan' => 'Disetujui Admin',
+                'catatan' => 'Disetujui Manager',
                 'acted_at' => now(),
             ]);
-            // Status tetap 'diajukan' sampai manager approve
-        } elseif ($role === 'manager') {
-            // Cek apakah sudah ada approval dari admin
-            $adminApproval = $sppd->approvals()->whereHas('approver', function($q) {
-                $q->where('role', 'admin');
-            })->where('status', 'disetujui')->exists();
-            
-            if ($adminApproval) {
-                $sppd->update([
-                    'status' => 'disetujui',
-                    'disetujui_oleh' => Auth::id(),
-                    'disetujui_pada' => now(),
-                    'alasan_penolakan' => null,
-                ]);
-                SppdApproval::create([
-                    'sppd_id' => $sppd->id,
-                    'approver_id' => Auth::id(),
-                    'status' => 'disetujui',
-                    'catatan' => 'Disetujui Manager',
-                    'acted_at' => now(),
-                ]);
-                event(new SppdApproved($sppd));
-            } else {
-                return redirect()->back()->withErrors(['error' => 'SPPD harus disetujui admin terlebih dahulu.']);
-            }
+        } elseif ($role === 'direksi' && $sppd->status === 'disetujui_manager') {
+            $sppd->update([
+                'status' => 'disetujui',
+                'disetujui_oleh' => Auth::id(),
+                'disetujui_pada' => now(),
+                'alasan_penolakan' => null,
+            ]);
+            SppdApproval::create([
+                'sppd_id' => $sppd->id,
+                'approver_id' => Auth::id(),
+                'status' => 'disetujui',
+                'catatan' => 'Disetujui Direksi',
+                'acted_at' => now(),
+            ]);
+            event(new SppdApproved($sppd));
         }
         return redirect()->route('sppd.show', $sppd);
     }

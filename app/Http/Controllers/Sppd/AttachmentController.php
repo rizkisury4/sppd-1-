@@ -9,9 +9,30 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AttachmentController extends Controller
 {
+    public function show(SppdRequest $sppd, SppdAttachment $attachment): BinaryFileResponse
+    {
+        $this->authorize('view', $sppd);
+
+        if ($attachment->sppd_id !== $sppd->id || blank($attachment->path)) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($attachment->path)) {
+            abort(404);
+        }
+
+        return response()->file(storage_path('app/public/'.$attachment->path), [
+            'Content-Type' => $attachment->mime ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="'.basename($attachment->path).'"',
+        ]);
+    }
+
     public function store(Request $request, SppdRequest $sppd): RedirectResponse
     {
         $this->authorize('update', $sppd);
