@@ -11,6 +11,7 @@ use App\Models\Employee;
 use App\Models\Sppd\SppdRequest;
 use App\Models\Sppd\SppdApproval;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,37 +22,27 @@ class SppdRequestController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $q = SppdRequest::query();
+        $q = SppdRequest::query()->with('pegawai.employee');
+
         if ($user->role === 'pegawai') {
             $q->where('pegawai_id', $user->id);
         }
+
         if (in_array($user->role, ['manager','admin','finance','direksi'], true) && $request->filled('pegawai_id')) {
             $q->where('pegawai_id', $request->integer('pegawai_id'));
         }
-        if ($request->filled('status')) {
-            $q->where('status', $request->string('status'));
-        }
-        $from = $request->date('dari');
-        $to = $request->date('sampai');
-        if ($from && $to) {
-            $q->where(function ($w) use ($from, $to) {
-                $w->whereBetween('tanggal_berangkat', [$from, $to])
-                  ->orWhereBetween('tanggal_pulang', [$from, $to]);
-            });
-        }
-        $requests = $q->latest('id')->paginate(10);
+
+        $filters = $this->applyIndexFilters($q, $request);
+        $requests = $q->latest('tanggal_berangkat')->latest('id')->paginate(10)->withQueryString();
+
         $pegawaiOptions = [];
         if (in_array($user->role, ['manager','admin','direksi'], true)) {
             $pegawaiOptions = $this->pegawaiFilterOptions();
         }
+
         return view('sppd.index', [
             'requests' => $requests,
-            'filters' => [
-                'status' => $request->string('status')->toString(),
-                'dari' => $from?->format('Y-m-d'),
-                'sampai' => $to?->format('Y-m-d'),
-                'pegawai_id' => $request->integer('pegawai_id'),
-            ],
+            'filters' => $filters,
             'pegawaiOptions' => $pegawaiOptions,
         ]);
     }
@@ -73,7 +64,7 @@ class SppdRequestController extends Controller
             $data['kode'] = 'SPPD-'.now()->format('Ymd').'-'.str_pad((string) (SppdRequest::max('id') + 1), 3, '0', STR_PAD_LEFT);
         }
         $data['pegawai_id'] = Auth::id();
-        $data['status'] = $data['status'] ?? 'draft';
+        $data['status'] = 'draft';
         $sppd = SppdRequest::create($data);
         return redirect()->route('sppd.show', $sppd);
     }
@@ -132,9 +123,72 @@ class SppdRequestController extends Controller
         return $participants->all();
     }
 
+    protected function applyIndexFilters(Builder $query, Request $request): array
+    {
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
+        }
+
+        $search = trim($request->string('q')->toString());
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+            $query->where(function (Builder $builder) use ($like) {
+                $builder->where('kode', 'like', $like)
+                    ->orWhere('tujuan', 'like', $like)
+                    ->orWhere('kota', 'like', $like)
+                    ->orWhereHas('pegawai', function (Builder $pegawaiQuery) use ($like) {
+                        $pegawaiQuery->where('name', 'like', $like)
+                            ->orWhere('email', 'like', $like)
+                            ->orWhereHas('employee', function (Builder $employeeQuery) use ($like) {
+                                $employeeQuery->where('name', 'like', $like)
+                                    ->orWhere('nip', 'like', $like);
+                            });
+                    });
+            });
+        }
+
+        $from = $request->date('dari');
+        $to = $request->date('sampai');
+        $this->applyDateRangeFilter($query, $from?->toDateString(), $to?->toDateString());
+
+        return [
+            'q' => $search,
+            'status' => $request->string('status')->toString(),
+            'dari' => $from?->format('Y-m-d'),
+            'sampai' => $to?->format('Y-m-d'),
+            'pegawai_id' => $request->integer('pegawai_id'),
+        ];
+    }
+
+    protected function applyDateRangeFilter(Builder $query, ?string $from, ?string $to): void
+    {
+        if ($from && $to) {
+            $query->whereDate('tanggal_berangkat', '<=', $to)
+                ->whereDate('tanggal_pulang', '>=', $from);
+
+            return;
+        }
+
+        if ($from) {
+            $query->whereDate('tanggal_pulang', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('tanggal_berangkat', '<=', $to);
+        }
+    }
+
     public function pdf(SppdRequest $sppd)
     {
         $this->authorize('view', $sppd);
+        if (! $sppd->isReadyForPdf()) {
+            return redirect()
+                ->route('sppd.show', $sppd)
+                ->withErrors([
+                    'pdf' => 'PDF belum bisa diunduh. Lengkapi dulu: '.implode(', ', $sppd->missingPdfRequirements()).'.',
+                ]);
+        }
+
         $sppd->load(['expenses', 'attachments', 'approvals.approver', 'pegawai', 'pejabatPerintah']);
         $html = view('sppd.pdf', compact('sppd'))->render();
         $mpdf = new \Mpdf\Mpdf([

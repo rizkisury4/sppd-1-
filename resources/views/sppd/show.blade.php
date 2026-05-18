@@ -42,6 +42,19 @@
                     </div>
                 </div>
 
+                @php
+                    $canManageDraftActions = auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']);
+                    $canSeePdfAction = in_array(auth()->user()->role, ['admin','manager','direksi'], true);
+                    $missingPdfRequirements = $sppd->missingPdfRequirements();
+                    $pdfReady = $missingPdfRequirements === [];
+                @endphp
+
+                @if($errors->has('pdf'))
+                    <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-100">
+                        {{ $errors->first('pdf') }}
+                    </div>
+                @endif
+
                 @if($sppd->status === 'ditolak' && filled($sppd->alasan_penolakan))
                     <div class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-900 dark:border-rose-700/60 dark:bg-rose-900/20 dark:text-rose-100">
                         <div class="text-sm font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Alasan Penolakan</div>
@@ -204,7 +217,7 @@
 
                 
 
-                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
+                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','diajukan','ditolak']))
                     <div>
                         <h3 class="font-semibold mb-2">Tambah Biaya</h3>
                         <form method="POST" action="{{ route('sppd.expenses.store', $sppd) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
@@ -252,7 +265,7 @@
                                     <th class="px-3 py-2">Rate</th>
                                     <th class="px-3 py-2">Jumlah Hari</th>
                                     <th class="px-3 py-2 text-right">Total</th>
-                                    @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
+                                    @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','diajukan','ditolak']))
                                         <th class="px-3 py-2">Aksi</th>
                                     @endif
                                 </tr>
@@ -265,7 +278,7 @@
                                         <td class="px-3 py-2">{{ number_format((float) $e->jumlah, 0, ',', '.') }} {{ $e->mata_uang }}</td>
                                         <td class="px-3 py-2">{{ $e->jumlah_hari }}</td>
                                         <td class="px-3 py-2 text-right">{{ number_format((float) $e->jumlah, 0, ',', '.') }}</td>
-                                        @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
+                                        @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','diajukan','ditolak']))
                                             <td class="px-3 py-2" x-data="{ open: false }">
                                                 <button type="button" class="text-blue-600 hover:underline" x-on:click="open = !open">Aksi</button>
                                                 <div x-show="open" x-transition class="mt-2 space-y-2">
@@ -317,12 +330,17 @@
                         <p>Belum ada biaya.</p>
                     @endif
                 </div>
-                @if(in_array(auth()->user()->role, ['admin','manager','direksi'], true))
+                @if($canSeePdfAction && ! $canManageDraftActions)
                     <div>
-                        <a href="{{ route('sppd.pdf', $sppd) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Unduh PDF</a>
+                        @if($pdfReady)
+                            <a href="{{ route('sppd.pdf', $sppd) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Unduh PDF</a>
+                        @else
+                            <button type="button" disabled class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-slate-300 text-slate-500 cursor-not-allowed ring-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:ring-white/10">Unduh PDF</button>
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Lengkapi dulu: {{ implode(', ', $missingPdfRequirements) }}.</p>
+                        @endif
                     </div>
                 @endif
-                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
+                @if($canManageDraftActions)
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">Pejabat Berwenang Memberi Perintah</h3>
                         <form method="POST" action="{{ route('sppd.update', $sppd) }}" class="max-w-lg">
@@ -472,12 +490,22 @@
                     @endif
                 </div>
 
-                @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','ditolak']))
-                    <div class="flex gap-3 flex-wrap pt-6 border-t border-gray-200 dark:border-gray-700">
+                @if($canManageDraftActions)
+                    <div class="flex gap-3 flex-wrap items-start pt-6 border-t border-gray-200 dark:border-gray-700">
                         <form method="POST" action="{{ route('sppd.ajukan', $sppd) }}">
                             @csrf
                             <button class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-blue-600 text-white hover:bg-blue-700 ring-blue-700/20 dark:bg-blue-500 dark:hover:bg-blue-400 dark:ring-white/10">Ajukan</button>
                         </form>
+                        @if($canSeePdfAction)
+                            <div>
+                                @if($pdfReady)
+                                    <a href="{{ route('sppd.pdf', $sppd) }}" class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-emerald-600 text-white hover:bg-emerald-700 ring-emerald-700/20 dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:ring-white/10">Unduh PDF</a>
+                                @else
+                                    <button type="button" disabled class="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold shadow-sm ring-1 ring-inset bg-slate-300 text-slate-500 cursor-not-allowed ring-slate-300 dark:bg-slate-700 dark:text-slate-400 dark:ring-white/10">Unduh PDF</button>
+                                    <p class="mt-2 max-w-xl text-xs text-slate-500 dark:text-slate-400">Lengkapi dulu: {{ implode(', ', $missingPdfRequirements) }}.</p>
+                                @endif
+                            </div>
+                        @endif
                         @if($sppd->status === 'ditolak')
                             <form method="POST" action="{{ route('sppd.ajukanUlang', $sppd) }}">
                                 @csrf

@@ -49,6 +49,30 @@
         });
         $managerSigner = $managerApproval?->approver?->name ?? $sppd->pejabatPerintah?->name ?? 'Manager';
         $direksiSigner = $direksiApproval?->approver?->name ?? 'Direksi';
+        $finalSignerRole = $direksiApproval?->approver ? 'Direksi' : 'Manager';
+        $finalSignerName = $direksiApproval?->approver?->name ?? $managerSigner;
+        $approvalOfficerName = $direksiApproval?->approver?->name ?? $managerSigner;
+        $signatories = $direksiApproval?->approver
+            ? [
+                [
+                    'role' => 'Admin',
+                    'name' => $adminSigner,
+                ],
+                [
+                    'role' => $finalSignerRole,
+                    'name' => $finalSignerName,
+                ],
+            ]
+            : [
+                [
+                    'role' => 'Manager',
+                    'name' => $managerSigner,
+                ],
+                [
+                    'role' => 'Manager',
+                    'name' => $managerSigner,
+                ],
+            ];
         $statusLabel = ucfirst(str_replace('_', ' ', $sppd->status ?? 'draft'));
 
     @endphp
@@ -86,7 +110,7 @@
             </tr>
             <tr>
                 <td class="info-label">Pejabat Berwenang</td>
-                <td class="info-value">{{ $managerSigner }}</td>
+                <td class="info-value">{{ $approvalOfficerName }}</td>
             </tr>
             <tr>
                 <td class="info-label">Periode</td>
@@ -181,21 +205,13 @@
 
         <table class="signatures">
             <tr>
-                <td>
-                    <div class="sign-role">Admin</div>
-                    <div class="sign-space"></div>
-                    <div class="sign-name">{{ $adminSigner }}</div>
-                </td>
-                <td>
-                    <div class="sign-role">Manager</div>
-                    <div class="sign-space"></div>
-                    <div class="sign-name">{{ $managerSigner }}</div>
-                </td>
-                <td>
-                    <div class="sign-role">Direksi</div>
-                    <div class="sign-space"></div>
-                    <div class="sign-name">{{ $direksiSigner }}</div>
-                </td>
+                @foreach($signatories as $signatory)
+                    <td style="width: {{ number_format(100 / count($signatories), 2, '.', '') }}%;">
+                        <div class="sign-role">{{ $signatory['role'] }}</div>
+                        <div class="sign-space"></div>
+                        <div class="sign-name">{{ $signatory['name'] }}</div>
+                    </td>
+                @endforeach
             </tr>
         </table>
     </div>

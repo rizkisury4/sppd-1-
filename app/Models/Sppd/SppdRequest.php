@@ -78,4 +78,30 @@ class SppdRequest extends Model
         return $this->hasMany(SppdApproval::class, 'sppd_id');
     }
 
+    public function missingPdfRequirements(): array
+    {
+        $requirements = [
+            'tujuan' => filled($this->tujuan),
+            'kota tujuan' => filled($this->kota),
+            'negara tujuan' => filled($this->negara),
+            'tanggal berangkat' => filled($this->tanggal_berangkat),
+            'tanggal pulang' => filled($this->tanggal_pulang),
+            'lama hari' => (int) $this->lama_hari > 0,
+            'maksud perjalanan' => filled($this->maksud_perjalanan),
+            'sumber anggaran' => filled($this->sumber_anggaran),
+            'transportasi' => filled($this->transportasi),
+            'pejabat berwenang' => filled($this->pejabat_perintah_id),
+            'anggota perjalanan' => collect($this->anggota)->filter()->isNotEmpty(),
+            'rincian biaya' => $this->expenses()->exists(),
+            'lampiran surat tugas' => $this->attachments()->where('jenis', 'surat_tugas')->exists(),
+        ];
+
+        return array_keys(array_filter($requirements, static fn (bool $isComplete): bool => ! $isComplete));
+    }
+
+    public function isReadyForPdf(): bool
+    {
+        return $this->missingPdfRequirements() === [];
+    }
+
 }

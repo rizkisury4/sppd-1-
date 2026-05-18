@@ -13,7 +13,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <form method="GET" action="{{ route('sppd.index') }}" class="mb-4 grid sm:grid-cols-5 gap-3 items-end">
+                    <form method="GET" action="{{ route('sppd.index') }}" class="mb-4 grid sm:grid-cols-6 gap-3 items-end">
                         @if(isset($pegawaiOptions) && count($pegawaiOptions))
                             <div class="sm:col-span-2">
                                 <label class="block mb-1">Pegawai</label>
@@ -25,6 +25,10 @@
                                 </select>
                             </div>
                         @endif
+                        <div class="sm:col-span-2">
+                            <label class="block mb-1">Cari</label>
+                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Kode, tujuan, kota, pegawai" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" />
+                        </div>
                         <div>
                             <label class="block mb-1">Status</label>
                             <select name="status" class="w-full rounded border-gray-300 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
