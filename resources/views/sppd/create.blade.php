@@ -238,6 +238,7 @@
                 },
                 anggota: {{ Js::from(old('anggota', [''])) }},
                 employeeOptions: {{ Js::from($employeeOptions) }},
+                geoCitiesUrl: @js(route('geo.cities')),
                 next() {
                     if (this.step === 1) {
                         if (!this.form.tujuan || !this.form.dest) return;
@@ -273,12 +274,16 @@
                 },
                 async loadOrigin() {
                     if (!this.form.origin_query || this.form.origin_query.length < 3) { this.originOptions = []; return; }
-                    const res = await fetch(`/geo/cities?q=${encodeURIComponent(this.form.origin_query)}`);
+                    const url = new URL(this.geoCitiesUrl, window.location.origin);
+                    url.searchParams.set('q', this.form.origin_query);
+                    const res = await fetch(url.toString());
                     this.originOptions = await res.json();
                 },
                 async loadDest() {
                     if (!this.form.dest_query || this.form.dest_query.length < 3) { this.destOptions = []; return; }
-                    const res = await fetch(`/geo/cities?q=${encodeURIComponent(this.form.dest_query)}`);
+                    const url = new URL(this.geoCitiesUrl, window.location.origin);
+                    url.searchParams.set('q', this.form.dest_query);
+                    const res = await fetch(url.toString());
                     this.destOptions = await res.json();
                 },
                 selectOrigin(opt) {
