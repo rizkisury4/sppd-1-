@@ -165,13 +165,13 @@
                             ?? $sharedExpenses->firstWhere('kategori', 'transportasi_lokal')
                             ?? $sharedExpenses->firstWhere('kategori', 'transport');
 
-                        $umHari = $uangMakan?->jumlah_hari;
+                        $umHari = $uangMakan?->jumlah_hari ?? 0;
                         $umRate = $uangMakan ? (float) $uangMakan->jumlah : 0;
-                        $umTotal = $umRate;
+                        $umTotal = $umRate * $umHari;
 
-                        $cpJumlah = $cuciPakaian?->jumlah_hari;
+                        $cpJumlah = $cuciPakaian?->jumlah_hari ?? 0;
                         $cpRate = $cuciPakaian ? (float) $cuciPakaian->jumlah : 0;
-                        $cpTotal = $cpRate;
+                        $cpTotal = $cpRate * $cpJumlah;
 
                         $transportTotal = $transportasi ? (float) $transportasi->jumlah : 0;
                         $rowTotal = $umTotal + $cpTotal + $transportTotal;

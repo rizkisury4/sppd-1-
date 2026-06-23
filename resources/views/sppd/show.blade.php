@@ -277,7 +277,7 @@
                                         <td class="px-3 py-2">{{ $e->kategori }}</td>
                                         <td class="px-3 py-2">{{ number_format((float) $e->jumlah, 0, ',', '.') }} {{ $e->mata_uang }}</td>
                                         <td class="px-3 py-2">{{ $e->jumlah_hari }}</td>
-                                        <td class="px-3 py-2 text-right">{{ number_format((float) $e->jumlah, 0, ',', '.') }}</td>
+                                        <td class="px-3 py-2 text-right">{{ number_format((float) $e->jumlah * $e->jumlah_hari, 0, ',', '.') }}</td>
                                         @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','diajukan','ditolak']))
                                             <td class="px-3 py-2" x-data="{ open: false }">
                                                 <button type="button" class="text-blue-600 hover:underline" x-on:click="open = !open">Aksi</button>
