@@ -47,6 +47,23 @@
                     $canSeePdfAction = in_array(auth()->user()->role, ['admin','manager','direksi'], true);
                     $missingPdfRequirements = $sppd->missingPdfRequirements();
                     $pdfReady = $missingPdfRequirements === [];
+                    $expenseRateOptions = [
+                        'uang_makan' => collect(\App\Http\Requests\Sppd\StoreExpenseRequest::UANG_MAKAN_RATES)
+                            ->map(fn (int $rate) => [
+                                'value' => (string) $rate,
+                                'label' => 'Rp '.number_format($rate, 0, ',', '.'),
+                            ])
+                            ->push([
+                                'value' => '__custom__',
+                                'label' => 'Lainnya',
+                            ])
+                            ->values()
+                            ->all(),
+                        'cuci_pakaian' => [[
+                            'value' => (string) \App\Http\Requests\Sppd\StoreExpenseRequest::CUCI_PAKAIAN_FLAT_RATE,
+                            'label' => 'Rp '.number_format(\App\Http\Requests\Sppd\StoreExpenseRequest::CUCI_PAKAIAN_FLAT_RATE, 0, ',', '.').' (Flat)',
+                        ]],
+                    ];
                 @endphp
 
                 @if($errors->has('pdf'))
@@ -220,8 +237,30 @@
                 @if(auth()->user()->role === 'admin' && in_array($sppd->status, ['draft','diajukan','ditolak']))
                     <div>
                         <h3 class="font-semibold mb-2">Tambah Biaya</h3>
-                        <form method="POST" action="{{ route('sppd.expenses.store', $sppd) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
+                        <form method="POST" action="{{ route('sppd.expenses.store', $sppd) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80"
+                              x-data="{
+                                  rateOptions: {{ Js::from($expenseRateOptions) }},
+                                  kategori: 'uang_makan',
+                                  selectedRate: '{{ (string) \App\Http\Requests\Sppd\StoreExpenseRequest::UANG_MAKAN_RATES[0] }}',
+                                  customJumlah: '',
+                                  syncRate() {
+                                      const options = this.rateOptions[this.kategori] ?? [];
+
+                                      if (! options.some((option) => option.value === this.selectedRate)) {
+                                          this.selectedRate = options[0]?.value ?? '';
+                                      }
+
+                                      if (this.kategori !== 'uang_makan') {
+                                          this.customJumlah = '';
+                                      }
+                                  },
+                                  resolvedJumlah() {
+                                      return this.selectedRate === '__custom__' ? this.customJumlah : this.selectedRate;
+                                  }
+                              }"
+                              x-init="syncRate()">
                             @csrf
+                            <input type="hidden" name="jumlah" x-bind:value="resolvedJumlah()">
                             <div>
                                 <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Pegawai</label>
                                 <select name="participant_name" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
@@ -233,14 +272,26 @@
                             </div>
                             <div>
                                 <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Kategori</label>
-                                <select name="kategori" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
+                                <select name="kategori" x-model="kategori" x-on:change="syncRate()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
                                     <option value="uang_makan">Uang Makan</option>
                                     <option value="cuci_pakaian">Cuci Pakaian</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rate</label>
-                                <input type="number" step="0.01" name="jumlah" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" required />
+                                <select x-model="selectedRate" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
+                                    <template x-for="option in (rateOptions[kategori] ?? [])" :key="`${kategori}-${option.value}`">
+                                        <option :value="option.value" x-text="option.label"></option>
+                                    </template>
+                                </select>
+                                <input x-show="kategori === 'uang_makan' && selectedRate === '__custom__'"
+                                       x-cloak
+                                       x-model="customJumlah"
+                                       type="number"
+                                       min="0"
+                                       step="1"
+                                       placeholder="Input nominal manual"
+                                       class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
                             </div>
                             <div>
                                 <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Jumlah Hari</label>
@@ -282,9 +333,38 @@
                                             <td class="px-3 py-2" x-data="{ open: false }">
                                                 <button type="button" class="text-blue-600 hover:underline" x-on:click="open = !open">Aksi</button>
                                                 <div x-show="open" x-transition class="mt-2 space-y-2">
-                                                    <form method="POST" action="{{ route('sppd.expenses.update', [$sppd, $e]) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
+                                                    <form method="POST" action="{{ route('sppd.expenses.update', [$sppd, $e]) }}" class="grid sm:grid-cols-5 gap-3 items-end rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80"
+                                                          x-data="{
+                                                              rateOptions: {{ Js::from($expenseRateOptions) }},
+                                                              kategori: '{{ $e->kategori }}',
+                                                              selectedRate: '{{ (string) ((int) round((float) $e->jumlah)) }}',
+                                                              customJumlah: '{{ (string) ((int) round((float) $e->jumlah)) }}',
+                                                              syncRate() {
+                                                                  const options = this.rateOptions[this.kategori] ?? [];
+
+                                                                  if (! options.some((option) => option.value === this.selectedRate)) {
+                                                                      this.selectedRate = this.kategori === 'uang_makan' ? '__custom__' : (options[0]?.value ?? '');
+                                                                  }
+
+                                                                  if (this.kategori !== 'uang_makan') {
+                                                                      this.customJumlah = '';
+                                                                  }
+                                                              },
+                                                              resolvedJumlah() {
+                                                                  return this.selectedRate === '__custom__' ? this.customJumlah : this.selectedRate;
+                                                              },
+                                                              init() {
+                                                                  this.syncRate();
+
+                                                                  if (this.kategori === 'uang_makan' && this.selectedRate !== '__custom__') {
+                                                                      this.customJumlah = this.selectedRate;
+                                                                  }
+                                                              }
+                                                          }"
+                                                          x-init="init()">
                                                         @csrf
                                                         @method('PUT')
+                                                        <input type="hidden" name="jumlah" x-bind:value="resolvedJumlah()">
                                                         <div>
                                                             <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Pegawai</label>
                                                             <select name="participant_name" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
@@ -296,14 +376,26 @@
                                                         </div>
                                                         <div>
                                                             <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Kategori</label>
-                                                            <select name="kategori" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
+                                                            <select name="kategori" x-model="kategori" x-on:change="syncRate()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]">
                                                                 <option value="uang_makan" @selected($e->kategori==='uang_makan')>Uang Makan</option>
                                                                 <option value="cuci_pakaian" @selected($e->kategori==='cuci_pakaian')>Cuci Pakaian</option>
                                                             </select>
                                                         </div>
                                                         <div>
                                                             <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Rate</label>
-                                                            <input type="number" step="0.01" name="jumlah" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" value="{{ $e->jumlah }}" required />
+                                                            <select x-model="selectedRate" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:[color-scheme:dark]" required>
+                                                                <template x-for="option in (rateOptions[kategori] ?? [])" :key="`${kategori}-${option.value}`">
+                                                                    <option :value="option.value" x-text="option.label"></option>
+                                                                </template>
+                                                            </select>
+                                                            <input x-show="kategori === 'uang_makan' && selectedRate === '__custom__'"
+                                                                   x-cloak
+                                                                   x-model="customJumlah"
+                                                                   type="number"
+                                                                   min="0"
+                                                                   step="1"
+                                                                   placeholder="Input nominal manual"
+                                                                   class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
                                                         </div>
                                                         <div>
                                                             <label class="block mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">Jumlah Hari</label>

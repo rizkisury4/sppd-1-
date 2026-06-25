@@ -68,6 +68,33 @@ class SppdRequestValidationTest extends TestCase
         $this->assertFalse($v2->fails(), json_encode($v2->errors()->toArray()));
     }
 
+    public function test_store_expense_request_accepts_custom_uang_makan_rate(): void
+    {
+        $valid = [
+            'kategori' => 'uang_makan',
+            'participant_name' => 'Budi',
+            'jumlah' => StoreExpenseRequest::UANG_MAKAN_RATES[0],
+            'jumlah_hari' => 2,
+            'tanggal' => now()->toDateString(),
+        ];
+
+        $validRequest = StoreExpenseRequest::create('/', 'POST', $valid);
+        $validValidator = Validator::make($valid, $validRequest->rules());
+        $this->assertFalse($validValidator->fails(), json_encode($validValidator->errors()->toArray()));
+
+        $custom = [
+            'kategori' => 'uang_makan',
+            'participant_name' => 'Budi',
+            'jumlah' => 260000,
+            'jumlah_hari' => 2,
+            'tanggal' => now()->toDateString(),
+        ];
+
+        $customRequest = StoreExpenseRequest::create('/', 'POST', $custom);
+        $customValidator = Validator::make($custom, $customRequest->rules());
+        $this->assertFalse($customValidator->fails(), json_encode($customValidator->errors()->toArray()));
+    }
+
     public function test_update_sppd_request_sometimes_rules(): void
     {
         $req = new UpdateSppdRequest();

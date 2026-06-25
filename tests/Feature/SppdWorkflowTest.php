@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Events\SppdApproved;
 use App\Events\SppdRejected;
+use App\Http\Requests\Sppd\StoreExpenseRequest;
 use App\Models\Sppd\SppdApproval;
 use App\Models\Sppd\SppdRequest;
 use App\Models\User;
@@ -150,6 +151,78 @@ class SppdWorkflowTest extends TestCase
 
         $response->assertRedirect(route('sppd.show', $sppd));
         $response->assertSessionHasErrors('pdf');
+    }
+
+    public function test_store_expense_forces_flat_laundry_rate(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Admin Utama']);
+        $this->actingAs($admin);
+
+        $sppd = SppdRequest::create([
+            'kode' => 'SPPD-WF-LAUNDRY',
+            'pegawai_id' => $admin->id,
+            'tujuan' => 'Jakarta',
+            'kota' => 'Jakarta',
+            'negara' => 'Indonesia',
+            'jenis_perjalanan' => 'non_diklat',
+            'tanggal_berangkat' => now()->toDateString(),
+            'tanggal_pulang' => now()->addDay()->toDateString(),
+            'lama_hari' => 1,
+            'maksud_perjalanan' => 'Rapat',
+            'status' => 'draft',
+        ]);
+
+        $response = $this->post(route('sppd.expenses.store', $sppd), [
+            'kategori' => 'cuci_pakaian',
+            'participant_name' => 'Admin Utama',
+            'jumlah' => 123456,
+            'jumlah_hari' => 2,
+            'tanggal' => now()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('sppd.show', $sppd));
+
+        $expense = $sppd->expenses()->firstOrFail();
+
+        $this->assertSame('cuci_pakaian', $expense->kategori);
+        $this->assertSame(StoreExpenseRequest::CUCI_PAKAIAN_FLAT_RATE, (int) round((float) $expense->jumlah));
+        $this->assertSame(2, $expense->jumlah_hari);
+    }
+
+    public function test_store_expense_allows_custom_uang_makan_rate(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Admin Utama']);
+        $this->actingAs($admin);
+
+        $sppd = SppdRequest::create([
+            'kode' => 'SPPD-WF-CUSTOM-RATE',
+            'pegawai_id' => $admin->id,
+            'tujuan' => 'Jakarta',
+            'kota' => 'Jakarta',
+            'negara' => 'Indonesia',
+            'jenis_perjalanan' => 'non_diklat',
+            'tanggal_berangkat' => now()->toDateString(),
+            'tanggal_pulang' => now()->addDay()->toDateString(),
+            'lama_hari' => 1,
+            'maksud_perjalanan' => 'Rapat',
+            'status' => 'draft',
+        ]);
+
+        $response = $this->post(route('sppd.expenses.store', $sppd), [
+            'kategori' => 'uang_makan',
+            'participant_name' => 'Admin Utama',
+            'jumlah' => 260000,
+            'jumlah_hari' => 2,
+            'tanggal' => now()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('sppd.show', $sppd));
+
+        $expense = $sppd->expenses()->firstOrFail();
+
+        $this->assertSame('uang_makan', $expense->kategori);
+        $this->assertSame(260000, (int) round((float) $expense->jumlah));
+        $this->assertSame(2, $expense->jumlah_hari);
     }
 
     public function test_pdf_shows_manager_signatures_before_direksi_approval(): void
